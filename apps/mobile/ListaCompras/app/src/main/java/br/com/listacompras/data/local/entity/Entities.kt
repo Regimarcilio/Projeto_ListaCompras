@@ -28,7 +28,8 @@ data class ListaEntity(
     val nome: String,
     val dataCriacao: Long = System.currentTimeMillis(),
     val dataCompra: String? = null,
-    val finalizada: Boolean = false
+    val finalizada: Boolean = false,
+    val estabelecimento: String? = null
 )
 
 @Entity(

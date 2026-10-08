@@ -18,6 +18,7 @@ object JsonCodec {
                     put("dataCriacao", l.dataCriacao)
                     l.dataCompra?.let { put("dataCompra", it) }
                     put("finalizada", l.finalizada)
+                    l.estabelecimento?.takeIf { it.isNotBlank() }?.let { put("estabelecimento", it) }
                     put("itens", buildJsonArray {
                         itens.forEach { i ->
                             add(buildJsonObject {
@@ -56,7 +57,8 @@ object JsonCodec {
                     id = lid, nome = nome,
                     dataCriacao = o["dataCriacao"]?.jsonPrimitive?.longOrNull ?: System.currentTimeMillis(),
                     dataCompra = o["dataCompra"]?.jsonPrimitive?.contentOrNull,
-                    finalizada = o["finalizada"]?.jsonPrimitive?.booleanOrNull ?: false
+                    finalizada = o["finalizada"]?.jsonPrimitive?.booleanOrNull ?: false,
+                    estabelecimento = o["estabelecimento"]?.jsonPrimitive?.contentOrNull?.takeIf { it.isNotBlank() }
                 )
                 val itens = mutableListOf<ItemEntity>()
                 o["itens"]?.jsonArray?.forEachIndexed { ii, ie ->

@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
@@ -62,14 +63,16 @@ fun validarEdicao(nome: String, preco: Double?, qtd: Double?): String? {
     return null
 }
 
-/** #3: monta o texto do WhatsApp (pura, testável). */
+/** #3: monta o texto do WhatsApp (pura, testável). #7: estabelecimento opcional no cabeçalho. */
 fun montarTextoWhatsApp(
     nomeLista: String,
     data: String,
     itens: List<ItemEntity>,
-    total: Double
+    total: Double,
+    estabelecimento: String? = null
 ): String {
     val sb = StringBuilder("🛒 $nomeLista ($data)\n")
+    if (!estabelecimento.isNullOrBlank()) sb.append("🏪 ${estabelecimento.trim()}\n")
     itens.forEach { i ->
         val sub = (i.precoUnit ?: 0.0) * i.quantidade
         sb.append("• ${i.nome} — ${formatarQtd(i.quantidade)}${i.unidade} x R$ %.2f = R$ %.2f\n".format(i.precoUnit ?: 0.0, sub))
@@ -110,8 +113,20 @@ class ListaAtivaViewModel @Inject constructor(
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ListaUiState())
 
+    /** #7: lista atual (nome + estabelecimento) para header e diálogo 1x por lista. */
+    val lista: StateFlow<br.com.listacompras.data.local.entity.ListaEntity?> =
+        _listaId.flatMapLatest { id ->
+            if (id.isBlank()) flowOf(null) else listas.observarPorId(id)
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
     fun abrir(listaId: String) { _listaId.value = listaId }
     fun toggle(item: ItemEntity) = viewModelScope.launch { dao.setSelecionado(item.id, !item.selecionado) }
+    /** #7: persiste o nome do estabelecimento. */
+    fun salvarEstabelecimento(nome: String) = viewModelScope.launch {
+        val id = _listaId.value
+        val limpo = nome.trim()
+        if (id.isNotBlank() && limpo.isNotBlank()) listas.setEstabelecimento(id, limpo)
+    }
     /** Legado (delta fixo) — mantido p/ compat; a UI usa [ajustarQuantidade] com passo por unidade. */
     fun qtd(item: ItemEntity, delta: Double) = viewModelScope.launch {
         val nova = (item.quantidade + delta).coerceAtLeast(0.5)
@@ -143,14 +158,20 @@ class ListaAtivaViewModel @Inject constructor(
             )
         )
     }
-    /** #3: finaliza via ListaOpsUseCase.finalizar, monta resumo e cria a nova lista ativa. */
+    /** #3: finaliza via ListaOpsUseCase.finalizar, monta resumo e cria a nova lista ativa.
+     *  #7: inclui estabelecimento no texto. #8: desmarca todos os itens da lista fechada
+     *  (zera o badge) antes de criar a nova — sem apagar itens (histórico precisa deles). */
     suspend fun fechar(listaId: String): ResumoFechado {
         val itens = dao.listarDaLista(listaId)
         val lista = listas.porId(listaId)
         ops.finalizar(listaId)
+        dao.desmarcarTodos(listaId)
         val data = OffsetDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
         val total = itens.sumOf { (it.precoUnit ?: 0.0) * it.quantidade }
-        val texto = montarTextoWhatsApp(lista?.nome ?: "Lista de compras", data, itens, total)
+        val texto = montarTextoWhatsApp(
+            lista?.nome ?: "Lista de compras", data, itens, total,
+            estabelecimento = lista?.estabelecimento
+        )
         val novaId = ops.criar("Compra da semana")
         return ResumoFechado(
             nomeLista = lista?.nome ?: "Lista de compras",
@@ -172,17 +193,41 @@ fun ListaAtivaScreen(
 ) {
     LaunchedEffect(listaId) { vm.abrir(listaId) }
     val st by vm.ui.collectAsState()
+    val listaAtual by vm.lista.collectAsState()
+    val estabelecimento = listaAtual?.estabelecimento
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
     var resumo by remember { mutableStateOf<ResumoFechado?>(null) }
     var editando by remember { mutableStateOf<ItemEntity?>(null) }
     var fechando by remember { mutableStateOf(false) }
+    // #7: pergunta do estabelecimento — 1 vez por lista (reset ao trocar de lista).
+    var mostrarEstab by remember(listaId) { mutableStateOf(false) }
+    var perguntouEstab by remember(listaId) { mutableStateOf(false) }
     val vazia = st.itens.isEmpty()
+
+    /** Marca/desmarca e, se era o 1º selecionado e sem estabelecimento, abre o diálogo 1x. */
+    fun aoAlternar(item: ItemEntity) {
+        val nSelAntes = st.itens.count { it.selecionado }
+        vm.toggle(item)
+        if (!item.selecionado && nSelAntes == 0 && estabelecimento.isNullOrBlank() && !perguntouEstab) {
+            perguntouEstab = true
+            mostrarEstab = true
+        }
+    }
 
     Column {
         // Header fixo com total acumulado (RF-004) — padrão web: total grande verde + pill
         Surface(tonalElevation = 2.dp) {
             Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                // #7: nome do estabelecimento no header da Lista.
+                if (!estabelecimento.isNullOrBlank()) {
+                    Text(
+                        "🏪 ${estabelecimento!!.trim()}",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Column {
                         Text("Total no carrinho", style = MaterialTheme.typography.labelSmall)
@@ -215,7 +260,13 @@ fun ListaAtivaScreen(
                             scope.launch {
                                 val itens = st.itens
                                 val data = OffsetDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
-                                ctx.compartilharWhatsApp(montarTextoWhatsApp("Lista de compras", data, itens, st.total))
+                                ctx.compartilharWhatsApp(
+                                    montarTextoWhatsApp(
+                                        listaAtual?.nome ?: "Lista de compras",
+                                        data, itens, st.total,
+                                        estabelecimento = estabelecimento
+                                    )
+                                )
                             }
                         },
                         modifier = Modifier.weight(1f)
@@ -279,13 +330,13 @@ fun ListaAtivaScreen(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             IconButton(onClick = { editando = item }) { Icon(Icons.Filled.Edit, contentDescription = "Editar item") }
                             IconButton(onClick = { vm.remover(item) }) { Icon(Icons.Filled.Delete, contentDescription = "Remover item") }
-                            Checkbox(checked = verde, onCheckedChange = { vm.toggle(item) })
+                            Checkbox(checked = verde, onCheckedChange = { aoAlternar(item) })
                         }
                     },
                     colors = if (verde) ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.primaryContainer)
                     else ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surface),
                     modifier = Modifier.combinedClickable(
-                        onClick = { vm.toggle(item) },
+                        onClick = { aoAlternar(item) },
                         onLongClick = { editando = item }
                     )
                 )
@@ -303,6 +354,17 @@ fun ListaAtivaScreen(
                 vm.salvarEdicao(item, nome, preco, qtd, unidade, marca)
                 editando = null
             }
+        )
+    }
+
+    // #7: pergunta 1x por lista; cancelar (X) mantém a marcação sem salvar.
+    if (mostrarEstab) {
+        EstabelecimentoDialog(
+            onConfirmar = { nome ->
+                vm.salvarEstabelecimento(nome)
+                mostrarEstab = false
+            },
+            onCancelar = { mostrarEstab = false }
         )
     }
 
@@ -328,6 +390,54 @@ fun ListaAtivaScreen(
             }
         )
     }
+}
+
+@Composable
+private fun EstabelecimentoDialog(
+    onConfirmar: (String) -> Unit,
+    onCancelar: () -> Unit
+) {
+    var nome by remember { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = onCancelar,
+        title = {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "Deseja adicionar o nome do estabelecimento?",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.weight(1f)
+                )
+                IconButton(onClick = onCancelar) {
+                    Icon(Icons.Filled.Close, contentDescription = "Fechar sem salvar")
+                }
+            }
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth().imePadding(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                OutlinedTextField(
+                    value = nome,
+                    onValueChange = { nome = it },
+                    label = { Text("Estabelecimento") },
+                    placeholder = { Text("Ex.: Atacadão") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onConfirmar(nome) },
+                enabled = nome.isNotBlank()
+            ) { Text("Confirmar") }
+        }
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

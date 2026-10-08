@@ -27,8 +27,14 @@ interface ListaDao {
     fun observarTodas(): Flow<List<ListaEntity>>
     @Query("SELECT * FROM lista_compra WHERE id=:id LIMIT 1")
     suspend fun porId(id: String): ListaEntity?
+    @Query("SELECT * FROM lista_compra WHERE id=:id LIMIT 1")
+    fun observarPorId(id: String): Flow<ListaEntity?>
+    @Query("UPDATE lista_compra SET estabelecimento=:nome WHERE id=:id")
+    suspend fun setEstabelecimento(id: String, nome: String)
     @Query("UPDATE lista_compra SET finalizada=1, dataCompra=:iso WHERE id=:id")
     suspend fun finalizar(id: String, iso: String)
+    @Query("DELETE FROM lista_compra WHERE id=:id")
+    suspend fun excluirLista(id: String)
 }
 
 data class TotalPorTipoRow(val tipo: TipoItem, val total: Double, val qtdItens: Int, val qtdSel: Int)
@@ -39,6 +45,8 @@ interface ItemDao {
     @Update suspend fun atualizar(item: ItemEntity)
     @Query("DELETE FROM item_lista WHERE id=:id") suspend fun remover(id: String)
     @Query("UPDATE item_lista SET selecionado=:v WHERE id=:id") suspend fun setSelecionado(id: String, v: Boolean)
+    @Query("UPDATE item_lista SET selecionado=0 WHERE listaId=:listaId") suspend fun desmarcarTodos(listaId: String)
+    @Query("DELETE FROM item_lista WHERE listaId=:listaId") suspend fun removerDaLista(listaId: String)
     @Query("SELECT * FROM item_lista WHERE listaId=:listaId ORDER BY ordem, nome")
     fun observarDaLista(listaId: String): Flow<List<ItemEntity>>
     @Query("SELECT tipo AS tipo, SUM(COALESCE(precoUnit,0)*quantidade) AS total, COUNT(*) AS qtdItens, SUM(CASE WHEN selecionado=1 THEN 1 ELSE 0 END) AS qtdSel FROM item_lista WHERE listaId=:listaId GROUP BY tipo ORDER BY total DESC")

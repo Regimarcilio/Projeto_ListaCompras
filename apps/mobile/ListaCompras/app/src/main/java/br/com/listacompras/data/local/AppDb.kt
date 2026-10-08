@@ -16,7 +16,7 @@ class Converters {
     @TypeConverter fun toTipo(v: String): TipoItem = runCatching { TipoItem.valueOf(v) }.getOrDefault(TipoItem.OUTROS)
 }
 
-@Database(entities = [CatalogoEntity::class, ListaEntity::class, ItemEntity::class], version = 4, exportSchema = true)
+@Database(entities = [CatalogoEntity::class, ListaEntity::class, ItemEntity::class], version = 5, exportSchema = true)
 @TypeConverters(Converters::class)
 abstract class AppDb : RoomDatabase() {
     abstract fun catalogo(): CatalogoDao
@@ -42,5 +42,11 @@ val MIGRATION_3_4 = object : Migration(3, 4) {
         db.execSQL("ALTER TABLE catalogo_item ADD COLUMN marca TEXT DEFAULT NULL")
         db.execSQL("ALTER TABLE catalogo_item ADD COLUMN quantidadeDefault REAL NOT NULL DEFAULT 1.0")
         db.execSQL("ALTER TABLE item_lista ADD COLUMN marca TEXT DEFAULT NULL")
+    }
+}
+
+val MIGRATION_4_5 = object : Migration(4, 5) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE lista_compra ADD COLUMN estabelecimento TEXT DEFAULT NULL")
     }
 }
