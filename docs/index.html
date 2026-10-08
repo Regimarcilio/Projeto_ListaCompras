@@ -2,44 +2,111 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>ListaCompras — Prévia Web do App Android</title>
 <style>
-  :root { --green: #2E7D32; --green-bg: #C8E6C9; --bg: #f5f5f5; --card: #fff; }
-  * { box-sizing: border-box; font-family: system-ui, Roboto, sans-serif; }
-  body { margin: 0; background: var(--bg); max-width: 640px; margin: 0 auto; min-height: 100vh; }
-  header { background: var(--green); color: #fff; padding: 12px 16px; position: sticky; top: 0; z-index: 10; }
-  header h1 { margin: 0; font-size: 18px; }
-  #totalBar { font-size: 20px; font-weight: bold; margin-top: 4px; }
-  nav { display: flex; background: #fff; position: sticky; top: 0; border-bottom: 1px solid #ddd; z-index: 9; }
-  nav button { flex: 1; padding: 12px 4px; border: 0; background: #fff; font-size: 13px; cursor: pointer; }
-  nav button.ativo { color: var(--green); border-bottom: 3px solid var(--green); font-weight: bold; }
-  main { padding: 12px 12px 40px; }
-  .card { background: var(--card); border-radius: 10px; padding: 12px; margin-bottom: 10px; box-shadow: 0 1px 3px #0002; }
-  .card.sel { background: var(--green-bg); border: 1px solid var(--green); }
-  .row { display: flex; gap: 8px; align-items: center; }
-  .grow { flex: 1; }
-  input, select { padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 15px; width: 100%; }
-  .btn { background: var(--green); color: #fff; border: 0; border-radius: 8px; padding: 12px; font-size: 15px; width: 100%; cursor: pointer; }
-  .btn.out { background: #fff; color: var(--green); border: 1px solid var(--green); }
-  .chk { width: 26px; height: 26px; accent-color: var(--green); }
-  .bar { height: 16px; background: var(--green); border-radius: 4px; margin: 2px 0 8px; }
-  small.mut { color: #666; }
-  .aviso { background: #FFF8E1; border: 1px solid #F9A825; border-radius: 8px; padding: 10px; margin-bottom: 10px; font-size: 14px; }
+  /* Tokens stylemaster (nível ESSENCIAL, AA, 48px, CSS puro) */
+  :root{
+    --green-900:#1B5E20; --green-700:#2E7D32;
+    --green-bg:#E8F5E9;
+    --bg:#F2F4F2; --card:#FFFFFF; --line:#E0E0E0;
+    --ink:#212121; --muted:#616161;
+    --warn:#F9A825; --warn-bg:#FFF8E1; --danger:#C62828;
+    --radius:14px; --radius-s:10px;
+    --shadow:0 1px 2px rgba(0,0,0,.12);
+    --tap:48px; --nav-h:calc(64px + env(safe-area-inset-bottom));
+    --font:system-ui,-apple-system,Roboto,"Segoe UI",sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{font-family:var(--font); background:var(--bg); color:var(--ink); margin:0 auto; max-width:640px; min-height:100vh;}
+  /* Header 2 linhas: nome + total grande + pill */
+  header{background:var(--green-900); color:#fff; padding:12px 16px 10px; position:sticky; top:0; z-index:10;}
+  header .app{font-size:15px; font-weight:700;}
+  header .row{display:flex; align-items:center; gap:10px; margin-top:2px;}
+  #totalBar{font-variant-numeric:tabular-nums; font-size:22px; font-weight:800;}
+  #totalBar.bump{animation:bump 250ms ease-out;}
+  @keyframes bump{0%{transform:scale(1)}40%{transform:scale(1.05)}100%{transform:scale(1)}}
+  @keyframes pop{from{transform:scale(.985)}to{transform:scale(1)}}
+  .pill{background:#ffffff2e; border-radius:999px; padding:4px 12px; font-size:13px; font-variant-numeric:tabular-nums;}
+  /* Bottom nav fixa (1 mão) */
+  nav{position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:640px;
+    height:var(--nav-h); background:#fff; border-top:1px solid var(--line); display:flex; z-index:20;
+    padding-bottom:env(safe-area-inset-bottom);}
+  nav button{flex:1; border:0; background:#fff; font-size:12px; min-height:56px; cursor:pointer; color:var(--muted);
+    border-top:3px solid transparent; transition:transform 120ms;}
+  nav button .ic{font-size:20px; display:block;}
+  nav button.ativo{color:var(--green-900); font-weight:700; border-top-color:var(--green-900); background:var(--green-bg);}
+  nav button:active{transform:scale(.97);}
+  main{padding:12px 12px calc(var(--nav-h) + 16px);}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow);
+    padding:12px; margin-bottom:10px;}
+  .card.sel{background:var(--green-bg); border-color:var(--green-900); border-left:4px solid var(--green-900); animation:pop 180ms ease-out;}
+  .row{display:flex; gap:8px; align-items:center;}
+  .grow{flex:1; min-width:0;}
+  .nome{overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;}
+  input,select{padding:10px; border:1px solid #ccc; border-radius:8px; font-size:16px; width:100%; min-height:var(--tap); font-family:var(--font);}
+  .btn{background:var(--green-900); color:#fff; border:0; border-radius:8px; padding:12px; font-size:15px; width:100%;
+    cursor:pointer; min-height:var(--tap); transition:transform 120ms;}
+  .btn:active{transform:scale(.97);}
+  .btn:disabled{opacity:.45;}
+  .btn.out{background:#fff; color:var(--green-700); border:1px solid var(--green-700);}
+  .btn.danger{background:#fff; color:var(--danger); border:1px solid var(--danger);}
+  .btn.sm{width:auto; padding:8px 12px; min-height:44px;}
+  .chk{width:44px; height:44px; accent-color:var(--green-900); flex:none;}
+  .iconbtn{border:1px solid var(--line); background:#fff; border-radius:8px; min-width:44px; min-height:44px; font-size:17px; cursor:pointer;}
+  .iconbtn.dim{opacity:.6;}
+  small.mut,.mut{color:var(--muted);}
+  .num{font-variant-numeric:tabular-nums;}
+  .err{color:var(--danger); font-size:14px; margin-top:6px;}
+  .aviso{background:var(--warn-bg); border:1px solid var(--warn); border-radius:8px; padding:10px; margin-bottom:10px; font-size:14px;}
+  /* Busca sticky + chips */
+  .busca{position:sticky; top:0; z-index:5; background:var(--bg); padding:4px 0 8px;}
+  .chips{display:flex; gap:6px; overflow-x:auto; padding:6px 0 2px;}
+  .chip{flex:none; border:1px solid var(--green-700); background:#fff; color:var(--green-700); border-radius:999px;
+    padding:8px 14px; font-size:13px; min-height:40px; cursor:pointer;}
+  .chip.on{background:var(--green-900); color:#fff; border-color:var(--green-900);}
+  /* Grid catálogo 2 col */
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  @media (max-width:379px){.grid2{grid-template-columns:1fr;}}
+  .grid2 .card{margin-bottom:0; display:flex; flex-direction:column;}
+  .grid2 .preco{font-size:18px; font-weight:800; font-variant-numeric:tabular-nums; margin:4px 0 8px;}
+  /* BI */
+  .barwrap{background:#E0E0E0; border-radius:999px; height:12px; margin:2px 0 8px; overflow:hidden;}
+  .barfill{height:100%; background:linear-gradient(90deg,var(--green-700),var(--green-900)); border-radius:999px;}
+  .bilinha{display:flex; justify-content:space-between; font-size:13px;}
+  .bilinha .t{font-size:12px; text-transform:uppercase; letter-spacing:.4px;}
+  /* Bottom-sheet */
+  #sheetRoot{position:fixed; inset:0; z-index:50; display:none;}
+  #sheetRoot.open{display:block;}
+  #sheetRoot .overlay{position:absolute; inset:0; background:#0008;}
+  #sheetRoot .sheet{position:absolute; left:50%; transform:translateX(-50%); bottom:0; width:100%; max-width:640px;
+    max-height:72vh; overflow-y:auto; background:#fff; border-radius:16px 16px 0 0; padding:16px 16px calc(16px + env(safe-area-inset-bottom));}
+  #sheetRoot .sheet h3{margin:0 0 10px; font-size:17px;}
+  #sheetRoot .sheet .btn{margin-top:8px;}
+  #sheetRoot .xrow{display:flex; justify-content:space-between; align-items:center;}
+  /* Toast + undo */
+  #toast{position:fixed; left:50%; transform:translateX(-50%); bottom:calc(var(--nav-h) + 12px); z-index:60;
+    background:var(--ink); color:#fff; border-radius:10px; padding:12px 16px; font-size:14px; display:none; max-width:92%;}
+  #toast.show{display:flex; gap:12px; align-items:center;}
+  #toast button{background:none; border:0; color:#A5D6A7; font-weight:800; font-size:14px; cursor:pointer;}
+  label.lbl{font-size:13px; color:var(--muted); display:block; margin:8px 0 4px;}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
 <header>
-  <h1>🛒 ListaCompras <small style="font-weight:normal">(prévia web do APK)</small></h1>
-  <div id="totalBar">Total: R$ 0,00 • 0 itens</div>
+  <div class="app">🛒 ListaCompras <span style="font-weight:normal;opacity:.8">· prévia do APK</span></div>
+  <div class="row"><span id="totalBar" class="num">R$ 0,00</span><span class="pill" id="pillItens">0 itens</span></div>
 </header>
-<nav>
-  <button data-t="catalogo" class="ativo">Catálogo</button>
-  <button data-t="lista">Lista</button>
-  <button data-t="bi">BI</button>
-  <button data-t="hist">Histórico</button>
-</nav>
 <main id="app"></main>
+<nav id="bottomnav">
+  <button data-t="catalogo"><span class="ic">📦</span>Catálogo</button>
+  <button data-t="lista"><span class="ic">🧾</span>Lista</button>
+  <button data-t="bi"><span class="ic">📊</span>BI</button>
+  <button data-t="hist"><span class="ic">🕘</span>Histórico</button>
+</nav>
+<div id="sheetRoot"></div>
+<div id="toast"></div>
 <script>
 const TIPOS = ["HORTIFRUTI","CARNE","MERCEARIA","LIMPEZA","PADARIA","LATICINIOS","BEBIDAS","HIGIENE","CONGELADOS","OUTROS"];
 const SEED = [
@@ -52,104 +119,274 @@ const SEED = [
   {nome:"Água sanitária 2L",tipo:"LIMPEZA",un:"un",preco:8.49},
   {nome:"Detergente 500ml",tipo:"LIMPEZA",un:"un",preco:2.99}
 ];
-let S = JSON.parse(localStorage.getItem("lc1") || "null") ||
-  { catalogo: SEED.map((s,i)=>({...s,id:"c"+i})), lista: [], historico: [] };
-const save = () => localStorage.setItem("lc1", JSON.stringify(S));
-const R$ = v => "R$ " + v.toFixed(2).replace(".", ",");
-let tela = "catalogo", filtro = "";
+let S = JSON.parse(localStorage.getItem("lc2") || "null") ||
+  { catalogo: SEED.map((s,i)=>({...s,id:"c"+i,seed:true})), lista: [], historico: [] };
+const save = () => localStorage.setItem("lc2", JSON.stringify(S));
+const BRL = v => "R$ " + (v||0).toFixed(2).replace(".", ",");
+let tela = "catalogo", busca = "", filtroTipo = "", expandHist = {};
+const totalSel = () => S.lista.filter(i=>i.sel).reduce((a,i)=>a+(i.preco||0)*i.qtd,0);
 
-function totalSel() { return S.lista.filter(i=>i.sel).reduce((a,i)=>a+(i.preco||0)*i.qtd,0); }
-function header() {
-  const t = totalSel(), n = S.lista.filter(i=>i.sel).length;
-  document.getElementById("totalBar").textContent = `Total: ${R$(t)} • ${n} itens`;
+/* ---------- infra UI: sheet / toast / undo ---------- */
+function openSheet(html, dismisivel=true){
+  const r = document.getElementById("sheetRoot");
+  r.innerHTML = `<div class="overlay" ${dismisivel?'onclick="closeSheet()"':''}></div><div class="sheet">${html}</div>`;
+  r.classList.add("open");
+}
+function closeSheet(){ const r=document.getElementById("sheetRoot"); r.classList.remove("open"); r.innerHTML=""; }
+function confirmar(titulo, detalhe, rotulo, fn){
+  openSheet(`<div class="xrow"><h3>${titulo}</h3><button class="iconbtn" onclick="closeSheet()">✕</button></div>
+    <p>${detalhe}</p><button class="btn" onclick="closeSheet();(${fn})()">${rotulo}</button>
+    <button class="btn out" onclick="closeSheet()">Cancelar</button>`);
+}
+let toastT=null;
+function toast(msg, acao){
+  const t=document.getElementById("toast");
+  t.innerHTML = `<span>${msg}</span>` + (acao?`<button onclick="(${acao.fn})()">${acao.rotulo}</button>`:"");
+  t.classList.add("show"); clearTimeout(toastT);
+  toastT=setTimeout(()=>t.classList.remove("show"), acao?5000:2600);
+}
+function header(bump){
+  const t=totalSel(), n=S.lista.filter(i=>i.sel).length;
+  const tb=document.getElementById("totalBar");
+  tb.textContent=BRL(t);
+  document.getElementById("pillItens").textContent=`${n} ${n===1?"item":"itens"}`;
+  if(bump){ tb.classList.remove("bump"); void tb.offsetWidth; tb.classList.add("bump"); }
 }
 
-function vCatalogo() {
-  const itens = S.catalogo.filter(c=>c.nome.toLowerCase().includes(filtro.toLowerCase()));
-  return `<div class="aviso">Prévia navegável do app Android — mesmos fluxos e regras. Dados ficam neste navegador.</div>
-  <div class="card"><div class="row"><input id="q" placeholder="Buscar no catálogo..." value="${filtro}"></div></div>
+/* ---------- CATÁLOGO: C(sheet edit)+R+D(confirm) ---------- */
+function validaCat(nome, preco, idIgn){
+  if(!nome.trim()) return "Nome obrigatório.";
+  if(preco===""||isNaN(preco)) return "Informe o valor corrente.";
+  if(preco<=0) return "Preço deve ser > 0.";
+  const dup=S.catalogo.some(c=>c.id!==idIgn && c.nome.trim().toLowerCase()===nome.trim().toLowerCase());
+  if(dup) return "Este item já está no catálogo.";
+  return null;
+}
+function vCatalogo(){
+  const itens=S.catalogo.filter(c=>(!filtroTipo||c.tipo===filtroTipo)&&c.nome.toLowerCase().includes(busca.toLowerCase()));
+  return `<div class="aviso">Prévia navegável do app Android — dados ficam neste navegador.</div>
+  <div class="busca"><div class="row"><input id="q" placeholder="Buscar no catálogo..." value="${busca.replace(/"/g,"&quot;")}">
+  ${busca?'<button class="iconbtn" onclick="setBusca(\'\')">×</button>':''}</div>
+  <div class="chips"><button class="chip ${!filtroTipo?'on':''}" onclick="setTipo('')">Todos</button>
+  ${TIPOS.map(t=>`<button class="chip ${filtroTipo===t?'on':''}" onclick="setTipo('${t}')">${t}</button>`).join("")}</div></div>
   <div class="card"><input id="n" placeholder="Nome do item">
-    <div class="row" style="margin-top:8px"><input id="p" type="number" step="0.01" placeholder="Valor (ex 5.99)">
+    <div class="row" style="margin-top:8px"><input id="p" type="number" step="0.01" min="0" placeholder="Valor (ex 5,99)">
     <select id="t">${TIPOS.map(t=>`<option>${t}</option>`).join("")}</select></div>
+    <div class="err" id="eAdd"></div>
     <div style="height:8px"></div><button class="btn" onclick="addCat()">Adicionar (vira catálogo reutilizável)</button></div>
-  ${itens.map(c=>`<div class="card"><div class="row"><div class="grow"><b>${c.nome}</b><br><small class="mut">${c.tipo} • ${R$(c.preco||0)}</small></div>
-  <button class="btn out" style="width:auto" onclick="paraLista('${c.id}')">+ Lista</button></div></div>`).join("")}`;
+  <div class="grid2">${itens.map(c=>{
+    const emUso=S.lista.some(i=>i.catId===c.id);
+    return `<div class="card"><div class="row"><div class="grow nome"><b>${c.nome}</b></div>
+      <button class="iconbtn dim" title="Editar" onclick="editCat('${c.id}')">✎</button>
+      <button class="iconbtn dim" title="Excluir" onclick="delCat('${c.id}')">🗑</button></div>
+      <small class="mut">${c.tipo}${emUso?' • <b>em uso na lista</b>':''}</small>
+      <div class="preco num">${BRL(c.preco)}</div>
+      <button class="btn out" onclick="paraLista('${c.id}')">+ Lista</button></div>`;
+  }).join("")}</div>
+  ${itens.length?"":'<div class="card"><small class="mut">Nada encontrado para este filtro.</small></div>'}`;
 }
-function vLista() {
-  if(!S.lista.length) return `<div class="card">Lista vazia — adicione itens pelo <b>Catálogo</b>.</div>`;
-  return S.lista.map(i=>`<div class="card ${i.sel?'sel':''}"><div class="row">
-    <input type="checkbox" class="chk" ${i.sel?'checked':''} onchange="toggle('${i.id}')">
-    <div class="grow" onclick="toggle('${i.id}')"><b>${i.nome}</b><br><small class="mut">${i.tipo} • ${R$(i.preco||0)}</small></div>
-    <button onclick="qtd('${i.id}',-0.5)">−</button><b>${i.qtd}</b><button onclick="qtd('${i.id}',0.5)">+</button>
-    <button onclick="rm('${i.id}')">✕</button></div></div>`).join("") +
-    `<button class="btn" onclick="finalizar()">Finalizar lista (grava data)</button>`;
+function setBusca(v){busca=v;render();const q=document.getElementById("q");if(q)q.focus();}
+function setTipo(t){filtroTipo=t;render();}
+function addCat(){
+  const n=document.getElementById("n").value, p=parseFloat(document.getElementById("p").value.replace(",",".")), t=document.getElementById("t").value;
+  const e=validaCat(n,p,null);
+  if(e){document.getElementById("eAdd").textContent=e;return;}
+  S.catalogo.push({id:"c"+Date.now(),nome:n.trim(),tipo:t,un:"un",preco:p}); save(); render(); toast("Adicionado ao catálogo ✅");
 }
-function vBI() {
-  const porTipo = {};
-  S.lista.filter(i=>i.sel).forEach(i=>{ porTipo[i.tipo]=(porTipo[i.tipo]||0)+i.qtd*(i.preco||0); });
-  const tot = Object.values(porTipo).reduce((a,b)=>a+b,0), max = Math.max(...Object.values(porTipo),1);
-  const n = parseInt(document.getElementById("np")?.value)||2;
-  return `<div class="card"><b>BI por tipo (selecionados)</b>${Object.keys(porTipo).length?"":"<br><small class=mut>Nada selecionado ainda.</small>"}
-  ${Object.entries(porTipo).map(([t,v])=>`<div>${t} — ${R$(v)}</div><div class="bar" style="width:${(v/max*100).toFixed(0)}%"></div>`).join("")}
-  <b>TOTAL: ${R$(tot)}</b></div>
-  <div class="card"><b>Dividir conta</b><div class="row"><input id="np" type="number" value="${n}" min="1" max="20" onchange="render()">
-  <button class="btn out" style="width:auto" onclick="render()">OK</button></div>
-  ${tot>0?Array.from({length:Math.min(n,20)},(_,k)=>`<div>Pessoa ${k+1}: ${R$(tot/n)}</div>`).join(""):""}</div>`;
+function editCat(id){
+  const c=S.catalogo.find(x=>x.id===id);
+  openSheet(`<div class="xrow"><h3>Editar item</h3><button class="iconbtn" onclick="closeSheet()">✕</button></div>
+    <label class="lbl">Nome</label><input id="fN" value="${c.nome.replace(/"/g,"&quot;")}">
+    <label class="lbl">Valor corrente</label><input id="fP" type="number" step="0.01" min="0" value="${c.preco||""}">
+    <label class="lbl">Tipo</label><select id="fT">${TIPOS.map(t=>`<option ${t===c.tipo?"selected":""}>${t}</option>`).join("")}</select>
+    <div class="err" id="fE"></div>
+    <button class="btn" id="fS" onclick="saveCat('${id}')">Salvar</button>`);
 }
-function vHist() {
-  return `<div class="card"><div class="row"><button class="btn" onclick="expJSON()">Salvar JSON</button>
-  <button class="btn out" onclick="share()">Enviar (WhatsApp/SMS)</button></div>
-  <div style="height:8px"></div><button class="btn out" onclick="document.getElementById('imp').click()">Importar JSON</button>
-  <input type="file" id="imp" accept=".json" style="display:none" onchange="impJSON(this)"></div>
-  ${S.historico.length?"":"<div class=card><small class=mut>Nenhuma lista finalizada ainda.</small></div>"}
-  ${[...S.historico].reverse().map(h=>`<div class="card"><b>${h.nome}</b><br><small class="mut">${new Date(h.data).toLocaleString("pt-BR")} • ${h.itens.length} itens • ${R$(h.total)}</small><br>
-  <button class="btn out" style="width:auto" onclick="dup('${h.id}')">Duplicar zerada</button></div>`).join("")}`;
+function saveCat(id){
+  const c=S.catalogo.find(x=>x.id===id);
+  const n=document.getElementById("fN").value, p=parseFloat(document.getElementById("fP").value.replace(",",".")), t=document.getElementById("fT").value;
+  const e=validaCat(n,p,id);
+  if(e){document.getElementById("fE").textContent=e;return;}
+  const mudou=c.nome!==n.trim()||c.preco!==p||c.tipo!==t;
+  if(!mudou){closeSheet();return;}
+  Object.assign(c,{nome:n.trim(),preco:p,tipo:t}); save(); closeSheet(); render(); toast("Catálogo atualizado ✅");
 }
-function render() {
-  header();
-  document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("ativo",b.dataset.t===tela));
-  const el = document.getElementById("app");
-  el.innerHTML = tela==="catalogo"?vCatalogo():tela==="lista"?vLista():tela==="bi"?vBI():vHist();
-  const q = document.getElementById("q"); if(q){ q.oninput=e=>{filtro=e.target.value; const p=e.target.selectionStart; render(); const n=document.getElementById("q"); n.focus(); n.setSelectionRange(p,p); }; }
+function delCat(id){
+  const c=S.catalogo.find(x=>x.id===id);
+  if(S.lista.some(i=>i.catId===id)){toast("Em uso na lista ativa — remova de lá primeiro.");return;}
+  if(c.seed){toast("Item de exemplo: prefira editar o preço.");}
+  confirmar("Excluir do catálogo?",`"${c.nome}" não aparecerá em futuras listas. O histórico é preservado.`,"Excluir",`()=>{S.catalogo=S.catalogo.filter(x=>x.id!=='${id}');save();render();toast("Excluído do catálogo.");}`);
 }
-document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{tela=b.dataset.t;render();});
+function paraLista(id){
+  const c=S.catalogo.find(x=>x.id===id);
+  S.lista.push({id:"i"+Date.now(),catId:id,nome:c.nome,tipo:c.tipo,un:c.un||"un",preco:c.preco||0,qtd:1,sel:false});
+  save(); tela="lista"; render(); toast("Adicionado → ver Lista");
+}
 
-function addCat() {
-  const n=document.getElementById("n").value.trim(), p=parseFloat(document.getElementById("p").value.replace(",",".")), t=document.getElementById("t").value;
-  if(!n) return alert("Nome obrigatório");
-  if(!isNaN(p)&&p<=0) return alert("Preço deve ser > 0");
-  S.catalogo.push({id:"c"+Date.now(),nome:n,tipo:t,un:"un",preco:isNaN(p)?0:p}); save(); render();
+/* ---------- LISTA: toggle+qtd+preço(sheet)+del(undo)+finalizar(confirm) ---------- */
+function vLista(){
+  if(!S.lista.length) return `<div class="card">Lista vazia — adicione itens pelo <b>Catálogo</b>.</div>`;
+  const nSel=S.lista.filter(i=>i.sel).length;
+  return S.lista.map(i=>`<div class="card ${i.sel?'sel':''}"><div class="row">
+    <input type="checkbox" class="chk" ${i.sel?'checked':''} onchange="toggle('${i.id}')" aria-label="Selecionar ${i.nome}">
+    <div class="grow" onclick="toggle('${i.id}')"><b>${i.nome}</b><br><small class="mut">${i.tipo} • <span class="num">${BRL(i.preco)}</span></small></div>
+    <button class="iconbtn dim" title="Editar preço/qtd" onclick="editItem('${i.id}')">✎</button></div>
+    <div class="row" style="margin-top:8px"><button class="iconbtn" onclick="qtd('${i.id}',-1)">−</button>
+    <b class="num">${i.qtd}</b><button class="iconbtn" onclick="qtd('${i.id}',1)">+</button>
+    <span class="grow"></span><button class="iconbtn dim" onclick="rmLista('${i.id}')">✕</button></div></div>`).join("") +
+    `<button class="btn" ${nSel===0?'disabled':''} onclick="askFinalizar()">Finalizar lista (grava data)</button>
+    ${nSel===0?'<div class="err">Selecione ao menos 1 item no mercado.</div>':''}`;
 }
-function paraLista(id) { const c=S.catalogo.find(x=>x.id===id); S.lista.push({id:"i"+Date.now(),nome:c.nome,tipo:c.tipo,preco:c.preco||0,qtd:1,sel:false}); save(); tela="lista"; render(); }
-function toggle(id) { const i=S.lista.find(x=>x.id===id); i.sel=!i.sel; save(); render(); }
-function qtd(id,d) { const i=S.lista.find(x=>x.id===id); i.qtd=Math.max(0.5,i.qtd+d); save(); render(); }
-function rm(id) { S.lista=S.lista.filter(x=>x.id!==id); save(); render(); }
-function finalizar() {
-  if(!S.lista.length) return alert("Lista vazia");
+function toggle(id){const i=S.lista.find(x=>x.id===id);i.sel=!i.sel;save();render();header(true);}
+function passo(i){return i.un==="kg"?0.5:1;}
+function qtd(id,d){const i=S.lista.find(x=>x.id===id);const p=passo(i);i.qtd=Math.min(99,Math.max(p,i.qtd+d*p));save();render();header(true);}
+let UNDO=null,undoT=null;
+function rmLista(id){
+  const ix=S.lista.findIndex(x=>x.id===id); UNDO={item:S.lista[ix],ix}; S.lista.splice(ix,1); save(); render(); header(false);
+  clearTimeout(undoT);
+  toast("Item removido.",{rotulo:"DESFAZER",fn:`()=>{S.lista.splice(Math.min(UNDO.ix,S.lista.length),0,UNDO.item);UNDO=null;save();render();header(false);}`});
+  undoT=setTimeout(()=>{UNDO=null;},5000);
+}
+function editItem(id){
+  const i=S.lista.find(x=>x.id===id);
+  openSheet(`<div class="xrow"><h3>${i.nome}</h3><button class="iconbtn" onclick="closeSheet()">✕</button></div>
+    <label class="lbl">Preço desta compra</label><input id="gP" type="number" step="0.01" min="0" value="${i.preco||""}">
+    <label class="lbl">Quantidade</label><input id="gQ" type="number" step="0.5" min="0.5" value="${i.qtd}">
+    <label class="row" style="margin-top:8px;font-size:14px"><input type="checkbox" id="gC" class="chk" style="width:28px;height:28px"> <span>Atualizar também no catálogo</span></label>
+    <div class="err" id="gE"></div><button class="btn" onclick="saveItem('${id}')">Salvar</button>`);
+}
+function saveItem(id){
+  const i=S.lista.find(x=>x.id===id);
+  const p=parseFloat(document.getElementById("gP").value.replace(",",".")), q=parseFloat(document.getElementById("gQ").value);
+  if(isNaN(p)||p<0){document.getElementById("gE").textContent="Preço inválido.";return;}
+  if(isNaN(q)||q<=0){document.getElementById("gE").textContent="Quantidade deve ser > 0.";return;}
+  i.preco=p;i.qtd=Math.min(99,q);
+  if(document.getElementById("gC").checked&&i.catId){const c=S.catalogo.find(x=>x.id===i.catId);if(c)c.preco=p;}
+  save();closeSheet();render();header(true);toast("Item atualizado ✅");
+}
+function askFinalizar(){
+  const sel=S.lista.filter(i=>i.sel), tot=totalSel();
+  if(!sel.length)return;
+  confirmar("Finalizar compra?",`${sel.length} ${sel.length===1?"item selecionado":"itens selecionados"} • Total <b class="num">${BRL(tot)}</b>. A lista sai da tela ativa e vai para o histórico com data.`,"Finalizar",`()=>finalizar()`);
+}
+function finalizar(){
   const total=totalSel();
   S.historico.push({id:"h"+Date.now(),nome:"Compra "+new Date().toLocaleDateString("pt-BR"),data:new Date().toISOString(),total,itens:S.lista.map(i=>({...i}))});
-  S.lista=[]; save(); tela="hist"; render();
+  S.lista=[];save();tela="hist";render();header(false);toast("Lista salva no histórico ✅");
 }
-function expJSON() {
+
+/* ---------- BI: só leitura ---------- */
+function vBI(){
+  const porTipo={};
+  S.lista.filter(i=>i.sel).forEach(i=>{porTipo[i.tipo]=(porTipo[i.tipo]||0)+i.qtd*(i.preco||0);});
+  const entries=Object.entries(porTipo).sort((a,b)=>b[1]-a[1]);
+  const tot=entries.reduce((a,[,v])=>a+v,0), max=Math.max(...entries.map(([,v])=>v),1);
+  const n=Math.min(Math.max(parseInt((document.getElementById("np")||{}).value)||2,1),20);
+  return `<div class="card"><b>BI por tipo</b> <small class="mut">(selecionados · somente leitura)</small>
+  ${entries.length?"":'<br><small class="mut">Nada selecionado ainda.</small>'}
+  ${entries.map(([t,v])=>`<div class="bilinha"><span class="t">${t}</span><span class="num">${BRL(v)} · ${(v/tot*100).toFixed(0)}%</span></div>
+  <div class="barwrap"><div class="barfill" style="width:${(v/max*100).toFixed(0)}%"></div></div>`).join("")}
+  <b class="num">TOTAL: ${BRL(tot)}</b></div>
+  <div class="card"><b>Dividir conta</b><div class="row"><input id="np" type="number" value="${n}" min="1" max="20" onchange="render()">
+  <button class="btn out sm" onclick="render()">OK</button></div>
+  ${tot>0?Array.from({length:n},(_,k)=>`<div class="num">Pessoa ${k+1}: ${BRL(tot/n)}</div>`).join(""):""}</div>`;
+}
+
+/* ---------- HISTÓRICO: detalhe+rename+del+dup+export/import ---------- */
+function vHist(){
+  return `<div class="card"><div class="row"><button class="btn" onclick="expJSON()">Salvar</button>
+  <button class="btn out" onclick="share()">Enviar</button></div>
+  <div style="height:8px"></div><button class="btn out" onclick="document.getElementById('imp').click()">Importar JSON</button>
+  <input type="file" id="imp" accept=".json,application/json" style="display:none" onchange="impJSON(this)">
+  <div style="height:8px"></div>${S.historico.length?'<button class="btn danger" onclick="clearHist()">Limpar tudo</button>':''}</div>
+  ${S.historico.length?"":'<div class="card"><small class="mut">Nenhuma lista finalizada ainda.</small></div>'}
+  ${[...S.historico].reverse().map(h=>{const open=!!expandHist[h.id];return `<div class="card">
+    <div class="row"><div class="grow" onclick="togHist('${h.id}')" style="cursor:pointer"><b>${open?"▾":"▸"} ${h.nome}</b><br>
+    <small class="mut">${new Date(h.data).toLocaleString("pt-BR")} • ${h.itens.length} itens • <span class="num">${BRL(h.total)}</span></small></div>
+    <button class="iconbtn dim" title="Renomear" onclick="renameHist('${h.id}')">✎</button>
+    <button class="iconbtn dim" title="Excluir" onclick="delHist('${h.id}')">🗑</button></div>
+    ${open?'<div style="margin:8px 0">'+h.itens.map(i=>`<div class="row" style="padding:4px 0"><span class="grow">• ${i.nome} <small class="mut">(${i.qtd}× ${BRL(i.preco)})</small></span></div>`).join("")+"</div>":""}
+    <div class="row"><input type="checkbox" id="z${h.id}" class="chk" style="width:28px;height:28px"><label for="z${h.id}" style="font-size:14px">zerar preços?</label>
+    <span class="grow"></span><button class="btn out sm" onclick="dup('${h.id}')">Duplicar</button></div></div>`;}).join("")}`;
+}
+function togHist(id){expandHist[id]=!expandHist[id];render();}
+function renameHist(id){
+  const h=S.historico.find(x=>x.id===id);
+  openSheet(`<div class="xrow"><h3>Renomear lista</h3><button class="iconbtn" onclick="closeSheet()">✕</button></div>
+  <input id="rN" maxlength="40" value="${h.nome.replace(/"/g,"&quot;")}"><div class="err" id="rE"></div>
+  <button class="btn" onclick="saveRename('${id}')">Salvar</button>`);
+}
+function saveRename(id){
+  const v=document.getElementById("rN").value.trim();
+  if(v.length<1||v.length>40){document.getElementById("rE").textContent="Use 1 a 40 caracteres.";return;}
+  S.historico.find(x=>x.id===id).nome=v; save();closeSheet();render();toast("Lista renomeada ✅");
+}
+function delHist(id){
+  const h=S.historico.find(x=>x.id===id);
+  confirmar("Excluir lista salva?",`"${h.nome}" (${h.itens.length} itens) será apagada do histórico.`,"Excluir",`()=>{S.historico=S.historico.filter(x=>x.id!=='${id}');save();render();toast("Lista excluída.");}`);
+}
+function clearHist(){
+  confirmar("Apagar TODO o histórico?",`${S.historico.length} listas serão apagadas. <b>Sem volta.</b> Exporte o JSON antes se precisar.`,"Apagar tudo",`()=>{S.historico=[];save();render();toast("Histórico limpo.");}`);
+}
+function dup(id){
+  const h=S.historico.find(x=>x.id===id), zerar=document.getElementById("z"+id)?.checked;
+  S.lista=h.itens.map(i=>({...i,id:"i"+Date.now()+Math.random(),catId:i.catId,sel:false,preco:zerar?0:(i.preco||0)}));
+  save();tela="lista";render();header(false);toast(zerar?"Duplicada com preços zerados.":"Duplicada com os preços originais ✅");
+}
+function expJSON(){
   const payload={app:"ListaCompras",schemaVersion:2,exportedAt:new Date().toISOString(),listas:S.historico};
   const a=document.createElement("a");
   a.href=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:"application/json"}));
-  a.download="listacompras-"+Date.now()+".json"; a.click();
+  a.download="listacompras-"+Date.now()+".json";a.click();toast("JSON salvo ✅");
 }
-function share() {
+function share(){
   const sel=S.lista.filter(i=>i.sel), tot=totalSel();
-  const txt="🛒 Minha lista\n"+sel.map(i=>`• ${i.nome} — ${i.qtd}x ${R$(i.preco||0)}`).join("\n")+`\nTOTAL: ${R$(tot)}`;
-  if(navigator.share) navigator.share({text:txt});
-  else { navigator.clipboard.writeText(txt); alert("Texto copiado! Cole no WhatsApp/SMS."); }
+  const base=S.lista.length?S.lista:(([...S.historico].reverse()[0]||{}).itens||[]);
+  const txt="🛒 Minha lista\n"+base.map(i=>`• ${i.nome} — ${i.qtd}x ${BRL(i.preco)}`).join("\n")+`\nTOTAL: ${BRL(S.lista.length?tot:base.reduce((a,i)=>a+i.qtd*(i.preco||0),0))}`;
+  if(navigator.share) navigator.share({text:txt}).catch(()=>{});
+  else if(navigator.clipboard){navigator.clipboard.writeText(txt);toast("Texto copiado! Cole no WhatsApp/SMS.");}
+  else toast("Copie manualmente: "+txt.slice(0,60)+"…");
 }
-function impJSON(inp) {
-  const f=inp.files[0]; if(!f) return;
+function impJSON(inp){
+  const f=inp.files[0]; if(!f)return;
   const r=new FileReader();
-  r.onload=()=>{ try{ const j=JSON.parse(r.result); alert(`Importado: ${(j.listas||[]).length} lista(s) do JSON de ${j.exportedAt||"?"}`); }
-    catch(e){ alert("JSON inválido"); } };
+  r.onload=()=>{
+    try{
+      const j=JSON.parse(r.result);
+      if((j.schemaVersion||0)>2) throw new Error("versão futura");
+      if(!Array.isArray(j.listas)) throw new Error("sem listas");
+      let ok=0,ign=0,erros=[];
+      j.listas.forEach((l,li)=>{
+        try{
+          if(!l.nome||!Array.isArray(l.itens)) throw new Error("lista inválida");
+          if(S.historico.some(h=>h.id===l.id)){ign++;return;}
+          l.itens.forEach(it=>{ if(!(it.qtd>0)) throw new Error(`qtd inválida em "${it.nome||"?"}";`); });
+          S.historico.push({id:l.id||("h"+Date.now()+li),nome:String(l.nome).slice(0,40),data:l.data||new Date().toISOString(),
+            total:l.total||l.itens.reduce((a,i)=>a+(i.qtd||0)*(i.preco||i.precoUnit||0),0),
+            itens:l.itens.map((it,ii)=>({id:it.id||("i"+Date.now()+ii),nome:String(it.nome),tipo:TIPOS.includes(it.tipo)?it.tipo:"OUTROS",
+              un:it.un||it.unidade||"un",qtd:it.qtd||1,preco:it.preco??it.precoUnit??0,sel:!!it.selecionado}))});
+          ok++;
+        }catch(e){erros.push(`lista ${li}: ${e.message}`);}
+      });
+      save();render();
+      toast(`Importado: ${ok} nova(s)${ign?`, ${ign} já existiam`:""}${erros.length?` · ${erros.length} erro(s)`:""} ✅`);
+    }catch(e){toast("Arquivo inválido: "+e.message);}
+    inp.value="";
+  };
   r.readAsText(f);
 }
-function dup(id) { const h=S.historico.find(x=>x.id===id); S.lista=h.itens.map(i=>({...i,id:"i"+Date.now()+Math.random(),sel:false,preco:0})); save(); tela="lista"; render(); }
+
+/* ---------- render ---------- */
+function render(){
+  header(false);
+  document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("ativo",b.dataset.t===tela));
+  const el=document.getElementById("app");
+  el.innerHTML=tela==="catalogo"?vCatalogo():tela==="lista"?vLista():tela==="bi"?vBI():vHist();
+  const q=document.getElementById("q");
+  if(q){q.oninput=e=>{const v=e.target.value,p=e.target.selectionStart;busca=v;render();
+    const n=document.getElementById("q");n.focus();n.setSelectionRange(p,p);};}
+}
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{tela=b.dataset.t;render();window.scrollTo(0,0);});
 render();
 </script>
 </body>
