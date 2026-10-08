@@ -57,6 +57,8 @@ fun HistoricoScreen(vm: HistoricoViewModel = hiltViewModel()) {
         Text("Histórico + Export", style = MaterialTheme.typography.titleLarge)
         vm.msg?.let { Text(it, color = MaterialTheme.colorScheme.primary); vm.limparMsg() }
         Spacer(Modifier.height(8.dp))
+        ImportExportCard()
+        Spacer(Modifier.height(8.dp))
         Button(onClick = { vm.exportarTodas() }, modifier = Modifier.fillMaxWidth()) {
             Text("Exportar JSON + Compartilhar (SMS/WhatsApp)")
         }

@@ -13,6 +13,7 @@ import br.com.listacompras.presentation.dashboard.DashboardGlobalScreen
 import br.com.listacompras.presentation.dashboard.DashboardScreen
 import br.com.listacompras.presentation.historico.HistoricoScreen
 import br.com.listacompras.presentation.listaativa.ListaAtivaScreen
+import br.com.listacompras.presentation.settings.SettingsScreen
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -30,6 +31,7 @@ class MainActivity : ComponentActivity() {
                         NavigationBarItem(selected = false, onClick = { nav.navigate("dashboard") }, label = { Text("BI") }, icon = {})
                         NavigationBarItem(selected = false, onClick = { nav.navigate("historico") }, label = { Text("Histórico") }, icon = {})
                         NavigationBarItem(selected = false, onClick = { nav.navigate("global") }, label = { Text("Global") }, icon = {})
+                        NavigationBarItem(selected = false, onClick = { nav.navigate("ajustes") }, label = { Text("Ajustes") }, icon = {})
                     }
                 }) { pad ->
                     NavHost(nav, startDestination = "catalogo", Modifier.padding(pad)) {
@@ -38,6 +40,7 @@ class MainActivity : ComponentActivity() {
                         composable("dashboard") { DashboardScreen(listaId) }
                         composable("historico") { HistoricoScreen() }
                         composable("global") { DashboardGlobalScreen() }
+                        composable("ajustes") { SettingsScreen() }
                     }
                 }
             }
