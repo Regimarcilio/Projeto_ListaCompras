@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- STYLEMASTER · ListaCompras · Nível ESSENCIAL -->
+<!-- Carrinho minimalista branco + folha hortifruti #A5D6A7. Fundo transparente: -->
+<!-- o verde #1B5E20 vem de @color/ic_launcher_background no adaptive-icon. -->
+<!-- Safe-zone respeitada: conteúdo relevante dentro de 21dp..87dp (círculo 66dp central). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Alça do carrinho -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M30,36 L40,46" />
+
+    <!-- Borda superior (rim) + cesto em U afunilado -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M40,44 H78 M44,44 L50,68 H67 L73,44" />
+
+    <!-- Folha hortifruti (detalhe verde-claro) espiando do cesto -->
+    <path
+        android:fillColor="#A5D6A7"
+        android:strokeColor="#00000000"
+        android:pathData="M58,40 C58,31 66,28 74,29 C73,37 64,42 58,40 Z" />
+    <!-- Nervura/cabinho da folha -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#A5D6A7"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:pathData="M58,40 L54,46" />
+
+    <!-- Rodas: 2 círculos brancos -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:strokeColor="#00000000"
+        android:pathData="M45.5,78 a4.5,4.5 0 1,0 9,0 a4.5,4.5 0 1,0 -9,0 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:strokeColor="#00000000"
+        android:pathData="M60.5,78 a4.5,4.5 0 1,0 9,0 a4.5,4.5 0 1,0 -9,0 Z" />
+</vector>

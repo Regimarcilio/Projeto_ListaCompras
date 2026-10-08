@@ -10,7 +10,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
@@ -52,8 +51,9 @@ fun DashboardScreen(listaId: String, vm: DashboardViewModel = hiltViewModel()) {
                 Text("$pct%", style = MaterialTheme.typography.bodyMedium)
             }
             // Barra arredondada com gradiente — mesmo padrão da prévia web
+            val track = MaterialTheme.colorScheme.surfaceVariant
             Canvas(Modifier.fillMaxWidth().height(12.dp)) {
-                drawRoundRect(color = Color(0xFFE0E0E0), cornerRadius = CornerRadius(999f, 999f))
+                drawRoundRect(color = track, cornerRadius = CornerRadius(999f, 999f))
                 drawRoundRect(
                     brush = Brush.horizontalGradient(listOf(Green700, Green900)),
                     size = Size(size.width * (t.total / max).toFloat(), size.height),

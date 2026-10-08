@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BarChart
@@ -21,9 +22,11 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.*
 import br.com.listacompras.presentation.catalogo.CatalogoScreen
 import br.com.listacompras.presentation.dashboard.BIScreen
+import br.com.listacompras.presentation.header.AppHeader
 import br.com.listacompras.presentation.historico.HistoricoScreen
 import br.com.listacompras.presentation.listaativa.ListaAtivaScreen
 import br.com.listacompras.presentation.settings.SettingsScreen
+import br.com.listacompras.presentation.settings.SettingsViewModel
 import br.com.listacompras.presentation.theme.ListaComprasTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -43,14 +46,31 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
+            // Tema: prefs.temaEscuro (Settings salva) com fallback p/ sistema quando nunca configurado.
+            val settingsVm: SettingsViewModel = hiltViewModel()
+            val temaPref by settingsVm.temaEscuroOrNull.collectAsState(initial = null)
+            val escuro = temaPref ?: isSystemInDarkTheme()
             // Mesmo padrão visual da prévia web (tokens stylemaster)
-            ListaComprasTheme {
+            ListaComprasTheme(escuro = escuro) {
                 val nav = rememberNavController()
                 var listaId by remember { mutableStateOf("demo-lista-01") }
                 val mainVm: MainViewModel = hiltViewModel()
+                // P0: garante que a lista ativa exista antes de qualquer tela usar.
+                LaunchedEffect(listaId) { mainVm.garantirLista(listaId) }
                 val badge by mainVm.badge.collectAsState()
                 val rotaAtual = nav.currentBackStackEntryAsState().value?.destination?.route
-                Scaffold(bottomBar = {
+                // Cabeçalho criativo (STYLEMASTER): selo verde + carrinho, eco do ícone do app.
+                val (tituloBar, subtituloBar) = when (rotaAtual) {
+                    "lista" -> "Lista de compras" to "Marque no carrinho"
+                    "dashboard" -> "BI" to "Lista · Global"
+                    "global" -> "BI Global" to "Finalizadas"
+                    "historico" -> "Histórico" to "Compras finalizadas"
+                    "ajustes" -> "Ajustes" to "Tema e backup"
+                    else -> "Catálogo" to "Toque + Lista para comprar"
+                }
+                Scaffold(
+                    topBar = { AppHeader(titulo = tituloBar, subtitulo = subtituloBar) },
+                    bottomBar = {
                     // 5 destinos (era 6 e quebrava "Catálogo/Histórico" em 360dp).
                     // BI agora unifica Lista+Global via TabRow. Label travado 1 linha.
                     NavigationBar {
@@ -87,7 +107,18 @@ class MainActivity : ComponentActivity() {
                     }
                 }) { pad ->
                     NavHost(nav, startDestination = "catalogo", Modifier.padding(pad)) {
-                        composable("catalogo") { CatalogoScreen() }
+                        composable("catalogo") {
+                            CatalogoScreen(
+                                listaId = listaId,
+                                onAdicionar = {
+                                    nav.navigate("lista") {
+                                        popUpTo(nav.graph.startDestinationId) { saveState = true }
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
+                                }
+                            )
+                        }
                         composable("lista") { ListaAtivaScreen(listaId) }
                         composable("dashboard") { BIScreen(listaId, abaInicial = 0) }
                         composable("historico") { HistoricoScreen() }
