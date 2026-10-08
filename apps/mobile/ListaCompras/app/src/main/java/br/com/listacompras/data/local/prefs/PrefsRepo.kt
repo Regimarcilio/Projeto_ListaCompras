@@ -19,6 +19,8 @@ class PrefsRepo @Inject constructor(@ApplicationContext private val ctx: Context
     }
 
     val temaEscuro: Flow<Boolean> = ctx.settingsStore.data.map { it[TEMA_ESCURO] ?: false }
+    // Nullable: null = nunca configurado -> UI usa isSystemInDarkTheme() como fallback.
+    val temaEscuroOrNull: Flow<Boolean?> = ctx.settingsStore.data.map { it[TEMA_ESCURO] }
     val backupAuto: Flow<Boolean> = ctx.settingsStore.data.map { it[BACKUP_AUTO] ?: true }
     val ultimoBackup: Flow<Long> = ctx.settingsStore.data.map { it[ULTIMO_BACKUP] ?: 0L }
 

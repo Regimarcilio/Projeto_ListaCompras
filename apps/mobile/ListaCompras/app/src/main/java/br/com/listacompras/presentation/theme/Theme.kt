@@ -28,9 +28,21 @@ private val CoresClaras = lightColorScheme(
 
 private val CoresEscuras = darkColorScheme(
     primary = Color(0xFFA5D6A7),
+    onPrimary = Color(0xFF1B3A1F),
     primaryContainer = Color(0xFF1B3A1F),
     onPrimaryContainer = Color(0xFFC8E6C9),
-    secondary = Color(0xFF81C784)
+    secondary = Color(0xFF81C784),
+    onSecondary = Color(0xFF10240F),
+    tertiary = Color(0xFF80CBC4),
+    onTertiary = Color(0xFF0F2422),
+    background = Color(0xFF121614),
+    onBackground = Color(0xFFE8ECE8),
+    surface = Color(0xFF1A1F1A),
+    onSurface = Color(0xFFE8ECE8),
+    surfaceVariant = Color(0xFF2A332A),
+    onSurfaceVariant = Color(0xFFC8D0C8),
+    error = Color(0xFFCF6679),
+    onError = Color(0xFF3A0A12)
 )
 
 @Composable

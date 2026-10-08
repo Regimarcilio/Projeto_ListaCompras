@@ -16,6 +16,8 @@ import javax.inject.Inject
 @HiltViewModel
 class SettingsViewModel @Inject constructor(private val prefs: PrefsRepo) : ViewModel() {
     val temaEscuro = prefs.temaEscuro
+    // null = nunca configurado -> UI usa isSystemInDarkTheme() como fallback.
+    val temaEscuroOrNull = prefs.temaEscuroOrNull
     val backupAuto = prefs.backupAuto
     fun tema(v: Boolean) = viewModelScope.launch { prefs.setTema(v) }
     fun backup(v: Boolean) = viewModelScope.launch { prefs.setBackupAuto(v) }

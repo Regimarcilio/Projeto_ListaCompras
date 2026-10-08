@@ -50,6 +50,8 @@ android {
     buildFeatures { compose = true }
     // Room schema exportado para versionamento (NFR-003)
     ksp { arg("room.schemaLocation", "$projectDir/schemas") }
+    // Testes usam JUnit5 (jupiter): sem isso, testDebugUnitTest roda 0 testes.
+    testOptions { unitTests.all { it.useJUnitPlatform() } }
 }
 
 dependencies {
@@ -58,6 +60,8 @@ dependencies {
     implementation(platform(libs.compose.bom))
     implementation(libs.compose.ui)
     implementation(libs.compose.material3)
+    // @Preview de AppHeader.kt (outro agente): só anotação design-time, versão via BOM.
+    debugImplementation("androidx.compose.ui:ui-tooling-preview")
     implementation(libs.compose.icons)
     implementation(libs.compose.icons.extended)
     implementation(libs.lifecycle.viewmodel)
@@ -73,6 +77,7 @@ dependencies {
     ksp(libs.room.compiler)
     ksp(libs.hilt.compiler)
     testImplementation(libs.junit5.api)
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.3")
     testImplementation(libs.turbine)
     testImplementation(libs.mockk)
 }

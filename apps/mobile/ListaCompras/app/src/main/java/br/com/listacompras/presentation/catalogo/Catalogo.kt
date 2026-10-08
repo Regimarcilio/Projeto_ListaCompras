@@ -17,7 +17,11 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import br.com.listacompras.data.local.dao.CatalogoDao
+import br.com.listacompras.data.local.dao.ItemDao
+import br.com.listacompras.data.local.dao.ListaDao
 import br.com.listacompras.data.local.entity.CatalogoEntity
+import br.com.listacompras.data.local.entity.ItemEntity
+import br.com.listacompras.data.local.entity.ListaEntity
 import br.com.listacompras.domain.model.TipoItem
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
@@ -25,7 +29,11 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class CatalogoViewModel @Inject constructor(private val dao: CatalogoDao) : ViewModel() {
+class CatalogoViewModel @Inject constructor(
+    private val dao: CatalogoDao,
+    private val itemDao: ItemDao,
+    private val listas: ListaDao
+) : ViewModel() {
     private val filtro = MutableStateFlow<TipoItem?>(null)
     val itens: StateFlow<List<CatalogoEntity>> = filtro.flatMapLatest { dao.observar(it) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -34,18 +42,45 @@ class CatalogoViewModel @Inject constructor(private val dao: CatalogoDao) : View
         dao.upsert(CatalogoEntity(nome = nome.trim(), tipo = tipo, precoRef = preco, codigoBarras = ean?.takeIf { it.isNotBlank() }))
     }
     suspend fun buscarEan(ean: String) = dao.porEan(ean.trim())
+    /** P0: "+ Lista" insere ItemEntity na lista ativa (garante a lista antes). Retorna nome p/ Snackbar. */
+    suspend fun adicionarNaLista(listaId: String, item: CatalogoEntity): String {
+        if (listas.porId(listaId) == null) listas.criar(ListaEntity(id = listaId, nome = "Compra da semana"))
+        val ordem = itemDao.listarDaLista(listaId).size
+        itemDao.adicionar(
+            ItemEntity(
+                listaId = listaId,
+                catalogoItemId = item.id,
+                nome = item.nome,
+                tipo = item.tipo,
+                unidade = item.unidadeDefault,
+                precoUnit = item.precoRef,
+                quantidade = 1.0,
+                ordem = ordem
+            )
+        )
+        return item.nome
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CatalogoScreen(vm: CatalogoViewModel = hiltViewModel(), onAdicionar: (CatalogoEntity) -> Unit = {}) {
+fun CatalogoScreen(
+    listaId: String = "demo-lista-01",
+    vm: CatalogoViewModel = hiltViewModel(),
+    onAdicionar: (CatalogoEntity) -> Unit = {}
+) {
     val itens by vm.itens.collectAsState()
     var nome by remember { mutableStateOf("") }
     var precoTxt by remember { mutableStateOf("") }
-    var tipo by remember { mutableStateOf(TipoItem.MERCEARIA) }
+    // Filtro do grid (null = Todas) — NÃO afeta o salvamento.
+    var filtroTipo by remember { mutableStateOf<TipoItem?>(null) }
+    // Categoria só do novo item a cadastrar.
+    var novoTipo by remember { mutableStateOf(TipoItem.MERCEARIA) }
     var ean by remember { mutableStateOf("") }
     var erro by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
+    val snackbar = remember { SnackbarHostState() }
+    Scaffold(snackbarHost = { SnackbarHost(snackbar) }) { pad ->
     // FIX print 08/10: Column + weight(1f) espremia o grid e cortava os cards
     // ("CARNE/LIMPEZA" decapitados). Agora tela inteira rola num único
     // LazyVerticalGrid com header full-span + filtro em LazyRow 1 linha.
@@ -53,6 +88,7 @@ fun CatalogoScreen(vm: CatalogoViewModel = hiltViewModel(), onAdicionar: (Catalo
         columns = GridCells.Fixed(2),
         modifier = Modifier
             .fillMaxSize()
+            .padding(pad)
             .imePadding(),
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -75,10 +111,27 @@ fun CatalogoScreen(vm: CatalogoViewModel = hiltViewModel(), onAdicionar: (Catalo
                     }) { Text("Buscar EAN", maxLines = 1) }
                 }
                 Spacer(Modifier.height(8.dp))
-                // Filtro: era FlowRow com 10 chips em 3-4 linhas (~140dp). Vira LazyRow 1 linha com scroll.
+                // Filtro do grid: era FlowRow com 10 chips em 3-4 linhas (~140dp). Vira LazyRow 1 linha com scroll.
+                // "Todas" = sem filtro (null). Só filtra o grid — não afeta o salvamento.
+                Text("Filtrar catálogo:", style = MaterialTheme.typography.labelMedium)
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    item {
+                        FilterChip(
+                            selected = filtroTipo == null,
+                            onClick = { filtroTipo = null; vm.filtrar(null) },
+                            label = { Text("Todas", maxLines = 1) }
+                        )
+                    }
+                    items(TipoItem.values()) { t ->
+                        FilterChip(selected = filtroTipo == t, onClick = { filtroTipo = t; vm.filtrar(t) }, label = { Text(t.name, maxLines = 1) })
+                    }
+                }
+                Spacer(Modifier.height(8.dp))
+                // Categoria do NOVO item: seção própria, só usada no salvamento.
+                Text("Categoria do novo item:", style = MaterialTheme.typography.labelMedium)
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(TipoItem.values()) { t ->
-                        FilterChip(selected = tipo == t, onClick = { tipo = t; vm.filtrar(t) }, label = { Text(t.name, maxLines = 1) })
+                        FilterChip(selected = novoTipo == t, onClick = { novoTipo = t }, label = { Text(t.name, maxLines = 1) })
                     }
                 }
                 erro?.let { Text(it, color = MaterialTheme.colorScheme.error) }
@@ -86,7 +139,7 @@ fun CatalogoScreen(vm: CatalogoViewModel = hiltViewModel(), onAdicionar: (Catalo
                     val preco = precoTxt.replace(",", ".").toDoubleOrNull()
                     if (nome.isBlank()) erro = "Nome obrigatório"
                     else if (preco != null && preco <= 0) erro = "Preço deve ser > 0"
-                    else { vm.salvar(nome, tipo, preco, ean); nome = ""; precoTxt = ""; ean = ""; erro = null }
+                    else { vm.salvar(nome, novoTipo, preco, ean); nome = ""; precoTxt = ""; ean = ""; erro = null }
                 }, modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) { Text("Adicionar (vira catálogo reutilizável)", maxLines = 1, overflow = TextOverflow.Ellipsis) }
             }
         }
@@ -108,9 +161,16 @@ fun CatalogoScreen(vm: CatalogoViewModel = hiltViewModel(), onAdicionar: (Catalo
                         maxLines = 1
                     )
                     Spacer(Modifier.height(8.dp))
-                    Button(onClick = { onAdicionar(item) }, modifier = Modifier.fillMaxWidth()) { Text("+ Lista", maxLines = 1) }
+                    Button(onClick = {
+                        scope.launch {
+                            val nomeAdd = vm.adicionarNaLista(listaId, item)
+                            snackbar.showSnackbar("$nomeAdd na lista ✅")
+                            onAdicionar(item)
+                        }
+                    }, modifier = Modifier.fillMaxWidth()) { Text("+ Lista", maxLines = 1) }
                 }
             }
         }
+    }
     }
 }
