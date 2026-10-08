@@ -1,6 +1,5 @@
 package br.com.listacompras.presentation.listaativa
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -8,6 +7,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
@@ -45,15 +45,18 @@ fun ListaAtivaScreen(listaId: String, vm: ListaAtivaViewModel = hiltViewModel())
     LaunchedEffect(listaId) { vm.abrir(listaId) }
     val st by vm.ui.collectAsState()
     Column {
-        // Header fixo com total acumulado (RF-004)
+        // Header fixo com total acumulado (RF-004) — padrão web: total grande verde + pill
         Surface(tonalElevation = 2.dp) {
             Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("Total", style = MaterialTheme.typography.titleMedium)
-                Text(
-                    "R$ %.2f • %d itens".format(st.total, st.itens.count { it.selecionado }),
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.clickable { }
-                )
+                Column {
+                    Text("Total no carrinho", style = MaterialTheme.typography.labelSmall)
+                    Text(
+                        "R$ %.2f".format(st.total),
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.ExtraBold),
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+                AssistChip(onClick = {}, label = { Text("%d %s".format(st.itens.count { it.selecionado }, if (st.itens.count { it.selecionado } == 1) "item" else "itens")) })
             }
         }
         LazyColumn {

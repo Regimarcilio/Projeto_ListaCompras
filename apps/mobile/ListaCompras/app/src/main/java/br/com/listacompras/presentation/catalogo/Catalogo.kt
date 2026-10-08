@@ -1,11 +1,13 @@
 package br.com.listacompras.presentation.catalogo
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
@@ -40,7 +42,7 @@ fun CatalogoScreen(vm: CatalogoViewModel = hiltViewModel(), onAdicionar: (Catalo
     var ean by remember { mutableStateOf("") }
     var erro by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
-    Column(Modifier.padding(16.dp)) {
+    Column(Modifier.fillMaxSize().padding(16.dp)) {
         OutlinedTextField(value = nome, onValueChange = { nome = it }, label = { Text("Nome do item") }, modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(8.dp))
         OutlinedTextField(value = precoTxt, onValueChange = { precoTxt = it }, label = { Text("Valor corrente (ex 5.99)") }, modifier = Modifier.fillMaxWidth())
@@ -66,9 +68,31 @@ fun CatalogoScreen(vm: CatalogoViewModel = hiltViewModel(), onAdicionar: (Catalo
             else if (preco != null && preco <= 0) erro = "Preço deve ser > 0"
             else { vm.salvar(nome, tipo, preco, ean); nome = ""; precoTxt = ""; ean = ""; erro = null }
         }, modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) { Text("Adicionar (vira catálogo reutilizável)") }
-        LazyColumn { items(itens, key = { it.id }) { item ->
-            ListItem(headlineContent = { Text(item.nome) }, supportingContent = { Text("${item.tipo} • R$ %.2f${item.codigoBarras?.let { " • EAN $it" } ?: ""}".format(item.precoRef ?: 0.0)) }, trailingContent = { Button(onClick = { onAdicionar(item) }) { Text("+ Lista") } })
-            HorizontalDivider()
-        } }
+        // Grid 2 colunas — mesmo padrão da prévia web
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(2),
+            modifier = Modifier.weight(1f),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            items(itens, key = { it.id }) { item ->
+                ElevatedCard(Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(12.dp)) {
+                        Text(item.nome, style = MaterialTheme.typography.titleMedium, maxLines = 2, minLines = 2)
+                        Text(
+                            "${item.tipo}${item.codigoBarras?.let { " • EAN" } ?: ""}",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            "R$ %.2f".format(item.precoRef ?: 0.0),
+                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        Button(onClick = { onAdicionar(item) }, modifier = Modifier.fillMaxWidth()) { Text("+ Lista") }
+                    }
+                }
+            }
+        }
     }
 }

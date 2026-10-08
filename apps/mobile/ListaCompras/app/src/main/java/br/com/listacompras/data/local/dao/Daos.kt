@@ -45,6 +45,8 @@ interface ItemDao {
     fun totalPorTipo(listaId: String): Flow<List<TotalPorTipoRow>>
     @Query("SELECT COALESCE(SUM(COALESCE(precoUnit,0)*quantidade),0) FROM item_lista WHERE listaId=:listaId AND selecionado=1")
     fun acumuladoSelecionados(listaId: String): Flow<Double>
+    @Query("SELECT COUNT(*) FROM item_lista WHERE selecionado=1")
+    fun contarSelecionados(): Flow<Int>
     @Query("SELECT * FROM item_lista WHERE listaId=:listaId ORDER BY ordem, nome")
     suspend fun listarDaLista(listaId: String): List<ItemEntity>
     // BI global por tipo com filtro de período (epoch millis) — dashboard 7D/30D/Tudo
