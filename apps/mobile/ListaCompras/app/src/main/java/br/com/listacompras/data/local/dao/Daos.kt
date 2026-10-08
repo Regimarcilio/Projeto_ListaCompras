@@ -50,6 +50,8 @@ interface ItemDao {
     @Query("SELECT * FROM item_lista WHERE listaId=:listaId ORDER BY ordem, nome")
     suspend fun listarDaLista(listaId: String): List<ItemEntity>
     // BI global por tipo com filtro de período (epoch millis) — dashboard 7D/30D/Tudo
-    @Query("SELECT i.tipo AS tipo, SUM(COALESCE(i.precoUnit,0)*i.quantidade) AS total, COUNT(*) AS qtdItens, SUM(CASE WHEN i.selecionado=1 THEN 1 ELSE 0 END) AS qtdSel FROM item_lista i JOIN lista_compra l ON l.id=i.listaId WHERE l.finalizada=1 AND l.dataCriacao>=:desde ORDER BY total DESC")
+    // GROUP BY obrigatório: sem ele o SQLite retorna 1 linha NULL com zero listas
+    // finalizadas e o Room quebra ao mapear p/ TotalPorTipoRow (crash issue #6).
+    @Query("SELECT i.tipo AS tipo, SUM(COALESCE(i.precoUnit,0)*i.quantidade) AS total, COUNT(*) AS qtdItens, SUM(CASE WHEN i.selecionado=1 THEN 1 ELSE 0 END) AS qtdSel FROM item_lista i JOIN lista_compra l ON l.id=i.listaId WHERE l.finalizada=1 AND l.dataCriacao>=:desde GROUP BY i.tipo ORDER BY total DESC")
     fun totalPorTipoGlobalDesde(desde: Long): Flow<List<TotalPorTipoRow>>
 }

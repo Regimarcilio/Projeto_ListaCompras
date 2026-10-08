@@ -41,6 +41,13 @@ fun DashboardGlobalScreen(vm: DashboardGlobalViewModel = hiltViewModel()) {
             }
         }
         Spacer(Modifier.height(8.dp))
+        if (totais.isEmpty()) {
+            Text(
+                "Nenhuma compra finalizada ainda — feche uma lista na aba Lista.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
         totais.forEach { t -> Text("${t.tipo} — R$ %.2f (%d itens)".format(t.total, t.qtdItens)) }
         Text("TOTAL: R$ %.2f".format(totais.sumOf { it.total }), style = MaterialTheme.typography.titleMedium)
     }
