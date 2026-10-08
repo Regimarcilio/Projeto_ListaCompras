@@ -16,7 +16,7 @@ class Converters {
     @TypeConverter fun toTipo(v: String): TipoItem = runCatching { TipoItem.valueOf(v) }.getOrDefault(TipoItem.OUTROS)
 }
 
-@Database(entities = [CatalogoEntity::class, ListaEntity::class, ItemEntity::class], version = 3, exportSchema = true)
+@Database(entities = [CatalogoEntity::class, ListaEntity::class, ItemEntity::class], version = 4, exportSchema = true)
 @TypeConverters(Converters::class)
 abstract class AppDb : RoomDatabase() {
     abstract fun catalogo(): CatalogoDao
@@ -34,5 +34,13 @@ val MIGRATION_2_3 = object : Migration(2, 3) {
     override fun migrate(db: SupportSQLiteDatabase) {
         db.execSQL("ALTER TABLE catalogo_item ADD COLUMN codigoBarras TEXT DEFAULT NULL")
         db.execSQL("CREATE INDEX IF NOT EXISTS index_catalogo_item_codigo ON catalogo_item(codigoBarras)")
+    }
+}
+
+val MIGRATION_3_4 = object : Migration(3, 4) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE catalogo_item ADD COLUMN marca TEXT DEFAULT NULL")
+        db.execSQL("ALTER TABLE catalogo_item ADD COLUMN quantidadeDefault REAL NOT NULL DEFAULT 1.0")
+        db.execSQL("ALTER TABLE item_lista ADD COLUMN marca TEXT DEFAULT NULL")
     }
 }

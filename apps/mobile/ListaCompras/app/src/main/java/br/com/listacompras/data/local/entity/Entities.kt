@@ -13,6 +13,8 @@ data class CatalogoEntity(
     val nome: String,
     val tipo: TipoItem,
     val unidadeDefault: String = "un",
+    val quantidadeDefault: Double = 1.0,
+    val marca: String? = null,
     val precoRef: Double? = null,
     val codigoBarras: String? = null, // Sprint4: EAN digitado (câmera = roadmap, sem permissão agora)
     val ativo: Boolean = true,
@@ -42,6 +44,7 @@ data class ItemEntity(
     val unidade: String = "un",
     val quantidade: Double = 1.0,
     val precoUnit: Double? = null,
+    val marca: String? = null,
     val selecionado: Boolean = false,
     val ordem: Int = 0
 )

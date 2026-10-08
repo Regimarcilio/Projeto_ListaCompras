@@ -119,7 +119,12 @@ class MainActivity : ComponentActivity() {
                                 }
                             )
                         }
-                        composable("lista") { ListaAtivaScreen(listaId) }
+                        composable("lista") {
+                            ListaAtivaScreen(
+                                listaId,
+                                onListaFechada = { novaId -> listaId = novaId }
+                            )
+                        }
                         composable("dashboard") { BIScreen(listaId, abaInicial = 0) }
                         composable("historico") { HistoricoScreen() }
                         // Compat: rota antiga "global" abre a aba Global dentro do BI
