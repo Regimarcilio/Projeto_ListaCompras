@@ -52,6 +52,8 @@ android {
     ksp { arg("room.schemaLocation", "$projectDir/schemas") }
     // Testes usam JUnit5 (jupiter): sem isso, testDebugUnitTest roda 0 testes.
     testOptions { unitTests.all { it.useJUnitPlatform() } }
+    // #14: schemas versionados viram assets do androidTest (MigrationTestHelper lê daqui).
+    sourceSets { getByName("androidTest").assets.srcDirs("$projectDir/schemas") }
 }
 
 dependencies {
@@ -78,6 +80,9 @@ dependencies {
     ksp(libs.hilt.compiler)
     testImplementation(libs.junit5.api)
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.10.3")
+    // #14: teste de migração instrumentado (roda em aparelho/emulador, não no CI atual).
+    androidTestImplementation(libs.room.testing)
+    androidTestImplementation(libs.androidx.test.junit)
     testImplementation(libs.turbine)
     testImplementation(libs.mockk)
 }

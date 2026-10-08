@@ -337,7 +337,10 @@ fun ListaAtivaScreen(
                     else ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surface),
                     modifier = Modifier.combinedClickable(
                         onClick = { aoAlternar(item) },
-                        onLongClick = { editando = item }
+                        onLongClick = { editando = item },
+                        // #12 TalkBack: só rótulos, sem mudar funcionamento.
+                        onClickLabel = if (verde) "Desmarcar ${item.nome}" else "Marcar ${item.nome}",
+                        onLongClickLabel = "Editar ${item.nome}"
                     )
                 )
                 HorizontalDivider()
