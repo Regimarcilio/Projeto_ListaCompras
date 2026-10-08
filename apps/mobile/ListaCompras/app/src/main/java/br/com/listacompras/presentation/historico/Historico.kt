@@ -31,7 +31,8 @@ class HistoricoViewModel @Inject constructor(
     private val ops: ListaOpsUseCase,
     private val share: ExportShareHelper
 ) : ViewModel() {
-    val listasFlow: StateFlow<List<ListaEntity>> = listas.observarTodas()
+    // Issue #10: exibe somente listas fechadas; export global segue levando todas.
+    val listasFlow: StateFlow<List<ListaEntity>> = listas.observarFinalizadas()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
     var msg by mutableStateOf<String?>(null); private set
 
@@ -49,7 +50,7 @@ class HistoricoViewModel @Inject constructor(
         msg = "Registro excluído"
     }
     fun exportarTodas() = viewModelScope.launch {
-        val ls = listasFlow.value
+        val ls = listas.observarTodas().first()
         val todas = ls.map { l -> l to itens.listarDaLista(l.id) }
         val json = JsonCodec.export(todas, share.agoraIso())
         val file = share.salvarJson("listacompras-${System.currentTimeMillis()}.json", json)
@@ -76,6 +77,14 @@ fun HistoricoScreen(vm: HistoricoViewModel = hiltViewModel()) {
             Text("Exportar JSON + Compartilhar (SMS/WhatsApp)")
         }
         Spacer(Modifier.height(8.dp))
+        // Issue #10: só listas fechadas aparecem; vazio amigável.
+        if (ls.isEmpty()) {
+            Text(
+                "Nenhuma lista fechada ainda — finalize uma lista na aba Lista.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
         LazyColumn {
             items(ls, key = { it.id }) { l ->
                 ElevatedCard(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
@@ -89,7 +98,7 @@ fun HistoricoScreen(vm: HistoricoViewModel = hiltViewModel()) {
                                 overflow = TextOverflow.Ellipsis
                             )
                         }
-                        Text("criada ${java.util.Date(l.dataCriacao)} • ${if (l.finalizada) "finalizada ${l.dataCompra}" else "aberta"}")
+                        Text("criada ${java.util.Date(l.dataCriacao)} • finalizada ${l.dataCompra}")
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             OutlinedButton(onClick = { verLista = l }) { Text("Ver lista") }
                             OutlinedButton(onClick = { excluirAlvo = l }) { Text("Excluir") }

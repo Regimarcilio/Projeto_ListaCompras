@@ -25,6 +25,9 @@ interface ListaDao {
     @Update suspend fun atualizar(lista: ListaEntity)
     @Query("SELECT * FROM lista_compra ORDER BY dataCriacao DESC")
     fun observarTodas(): Flow<List<ListaEntity>>
+    // Issue #10: Histórico exibe somente listas fechadas.
+    @Query("SELECT * FROM lista_compra WHERE finalizada=1 ORDER BY dataCriacao DESC")
+    fun observarFinalizadas(): Flow<List<ListaEntity>>
     @Query("SELECT * FROM lista_compra WHERE id=:id LIMIT 1")
     suspend fun porId(id: String): ListaEntity?
     @Query("SELECT * FROM lista_compra WHERE id=:id LIMIT 1")
