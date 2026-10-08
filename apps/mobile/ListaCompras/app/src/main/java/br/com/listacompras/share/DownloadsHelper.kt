@@ -19,7 +19,7 @@ class DownloadsHelper @Inject constructor(@ApplicationContext private val ctx: C
             val values = ContentValues().apply {
                 put(MediaStore.Downloads.DISPLAY_NAME, nome)
                 put(MediaStore.Downloads.MIME_TYPE, "application/json")
-                put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOAD + "/ListaCompras")
+                put(MediaStore.Downloads.RELATIVE_PATH, "Download/ListaCompras")
             }
             val uri = ctx.contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
                 ?: error("Falha ao criar arquivo em Downloads")
@@ -28,7 +28,7 @@ class DownloadsHelper @Inject constructor(@ApplicationContext private val ctx: C
             uri
         } else {
             @Suppress("DEPRECATION")
-            val dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOAD)
+            val dir = Environment.getExternalStoragePublicDirectory("Download")
             val pasta = File(dir, "ListaCompras").apply { mkdirs() }
             val f = File(pasta, nome).apply { writeText(conteudo) }
             Uri.fromFile(f)

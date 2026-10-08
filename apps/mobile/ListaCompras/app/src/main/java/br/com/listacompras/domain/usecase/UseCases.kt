@@ -5,6 +5,7 @@ import br.com.listacompras.domain.model.TipoItem
 import br.com.listacompras.domain.model.TotalPorTipo
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 data class ListaUiTotal(val total: Double, val qtdSelecionados: Int, val qtdTotal: Int)
@@ -15,8 +16,8 @@ class ToggleSelecaoUseCase @Inject constructor(private val dao: ItemDao) {
 
 class GetTotalPorTipoUseCase @Inject constructor(private val dao: ItemDao) {
     fun invoke(listaId: String): Flow<List<TotalPorTipo>> =
-        dao.totalPorTipo(listaId).let { flow ->
-            kotlinx.coroutines.flow.map(flow) { rows -> rows.map { TotalPorTipo(it.tipo, it.total, it.qtdItens, it.qtdSel) } }
+        dao.totalPorTipo(listaId).map { rows ->
+            rows.map { TotalPorTipo(it.tipo, it.total, it.qtdItens, it.qtdSel) }
         }
 }
 

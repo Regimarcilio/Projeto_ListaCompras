@@ -49,6 +49,7 @@ dependencies {
     implementation(libs.room.ktx)
     implementation(libs.datastore.prefs)
     implementation(libs.hilt.android)
+    implementation(libs.hilt.navigation.compose)
     implementation(libs.coroutines.core)
     implementation(libs.serialization.json)
     ksp(libs.room.compiler)

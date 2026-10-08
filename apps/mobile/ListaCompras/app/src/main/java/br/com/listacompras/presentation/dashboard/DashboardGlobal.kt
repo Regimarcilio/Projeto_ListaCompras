@@ -7,6 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import br.com.listacompras.data.local.dao.ItemDao
 import br.com.listacompras.domain.model.TotalPorTipo
 import dagger.hilt.android.lifecycle.HiltViewModel

@@ -9,6 +9,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import br.com.listacompras.data.local.dao.ItemDao
 import br.com.listacompras.domain.model.TotalPorTipo
 import br.com.listacompras.domain.usecase.dividirConta
