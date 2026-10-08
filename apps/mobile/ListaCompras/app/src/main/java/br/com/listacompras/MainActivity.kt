@@ -3,6 +3,7 @@ package br.com.listacompras
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BarChart
@@ -15,6 +16,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.*
 import br.com.listacompras.presentation.catalogo.CatalogoScreen
@@ -41,6 +44,7 @@ private val DESTINOS = listOf(
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         setContent {
             // Mesmo padrão visual da prévia web (tokens stylemaster)
             ListaComprasTheme {
@@ -50,6 +54,8 @@ class MainActivity : ComponentActivity() {
                 val badge by mainVm.badge.collectAsState()
                 val rotaAtual = nav.currentBackStackEntryAsState().value?.destination?.route
                 Scaffold(bottomBar = {
+                    // FIX print 08/10: 6 destinos em 360dp estouravam e quebravam
+                    // "Catálogo/Histórico" em 2 linhas. Trava label em 1 linha com ellipsis.
                     NavigationBar {
                         DESTINOS.forEach { d ->
                             NavigationBarItem(
@@ -61,7 +67,15 @@ class MainActivity : ComponentActivity() {
                                         restoreState = true
                                     }
                                 },
-                                label = { Text(d.rotulo) },
+                                alwaysShowLabel = true,
+                                label = {
+                                    Text(
+                                        d.rotulo,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        fontSize = 11.sp
+                                    )
+                                },
                                 icon = {
                                     if (d.rota == "lista" && badge > 0) {
                                         BadgedBox(badge = { Badge { Text(if (badge > 99) "99+" else "$badge") } }) {
