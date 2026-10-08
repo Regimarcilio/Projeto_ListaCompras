@@ -15,6 +15,8 @@ interface CatalogoDao {
     fun observar(tipo: TipoItem?): Flow<List<CatalogoEntity>>
     @Query("SELECT * FROM catalogo_item WHERE nome LIKE '%'||:q||'%' AND ativo=1 LIMIT 50")
     suspend fun buscar(q: String): List<CatalogoEntity>
+    @Query("SELECT * FROM catalogo_item WHERE codigoBarras=:ean AND ativo=1 LIMIT 1")
+    suspend fun porEan(ean: String): CatalogoEntity?
 }
 
 @Dao

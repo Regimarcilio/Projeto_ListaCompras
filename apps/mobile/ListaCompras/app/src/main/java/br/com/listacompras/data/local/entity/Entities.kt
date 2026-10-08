@@ -14,6 +14,7 @@ data class CatalogoEntity(
     val tipo: TipoItem,
     val unidadeDefault: String = "un",
     val precoRef: Double? = null,
+    val codigoBarras: String? = null, // Sprint4: EAN digitado (câmera = roadmap, sem permissão agora)
     val ativo: Boolean = true,
     val createdAt: String = Instant.now().toString(),
     val updatedAt: String = Instant.now().toString()

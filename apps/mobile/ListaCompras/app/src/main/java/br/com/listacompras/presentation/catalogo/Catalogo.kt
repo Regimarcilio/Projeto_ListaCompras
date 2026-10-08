@@ -24,9 +24,10 @@ class CatalogoViewModel @Inject constructor(private val dao: CatalogoDao) : View
     val itens: StateFlow<List<CatalogoEntity>> = filtro.flatMapLatest { dao.observar(it) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
     fun filtrar(t: TipoItem?) { filtro.value = t }
-    fun salvar(nome: String, tipo: TipoItem, preco: Double?) = viewModelScope.launch {
-        dao.upsert(CatalogoEntity(nome = nome.trim(), tipo = tipo, precoRef = preco))
+    fun salvar(nome: String, tipo: TipoItem, preco: Double?, ean: String?) = viewModelScope.launch {
+        dao.upsert(CatalogoEntity(nome = nome.trim(), tipo = tipo, precoRef = preco, codigoBarras = ean?.takeIf { it.isNotBlank() }))
     }
+    suspend fun buscarEan(ean: String) = dao.porEan(ean.trim())
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -36,11 +37,23 @@ fun CatalogoScreen(vm: CatalogoViewModel = hiltViewModel(), onAdicionar: (Catalo
     var nome by remember { mutableStateOf("") }
     var precoTxt by remember { mutableStateOf("") }
     var tipo by remember { mutableStateOf(TipoItem.MERCEARIA) }
+    var ean by remember { mutableStateOf("") }
     var erro by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
     Column(Modifier.padding(16.dp)) {
         OutlinedTextField(value = nome, onValueChange = { nome = it }, label = { Text("Nome do item") }, modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(8.dp))
         OutlinedTextField(value = precoTxt, onValueChange = { precoTxt = it }, label = { Text("Valor corrente (ex 5.99)") }, modifier = Modifier.fillMaxWidth())
+        Spacer(Modifier.height(8.dp))
+        OutlinedTextField(value = ean, onValueChange = { ean = it }, label = { Text("Código de barras (opcional)") }, modifier = Modifier.fillMaxWidth())
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedButton(onClick = {
+                scope.launch {
+                    val achou = ean.takeIf { it.isNotBlank() }?.let { vm.buscarEan(it) }
+                    erro = if (achou != null) "EAN encontrado: ${achou.nome} ✅" else "EAN não cadastrado — preencha e adicione"
+                }
+            }) { Text("Buscar EAN") }
+        }
         Spacer(Modifier.height(8.dp))
         @OptIn(ExperimentalLayoutApi::class)
         FlowRow { TipoItem.values().forEach { t ->
@@ -51,10 +64,10 @@ fun CatalogoScreen(vm: CatalogoViewModel = hiltViewModel(), onAdicionar: (Catalo
             val preco = precoTxt.replace(",", ".").toDoubleOrNull()
             if (nome.isBlank()) erro = "Nome obrigatório"
             else if (preco != null && preco <= 0) erro = "Preço deve ser > 0"
-            else { vm.salvar(nome, tipo, preco); nome = ""; precoTxt = ""; erro = null }
+            else { vm.salvar(nome, tipo, preco, ean); nome = ""; precoTxt = ""; ean = ""; erro = null }
         }, modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) { Text("Adicionar (vira catálogo reutilizável)") }
         LazyColumn { items(itens, key = { it.id }) { item ->
-            ListItem(headlineContent = { Text(item.nome) }, supportingContent = { Text("${item.tipo} • R$ %.2f".format(item.precoRef ?: 0.0)) }, trailingContent = { Button(onClick = { onAdicionar(item) }) { Text("+ Lista") } })
+            ListItem(headlineContent = { Text(item.nome) }, supportingContent = { Text("${item.tipo} • R$ %.2f${item.codigoBarras?.let { " • EAN $it" } ?: ""}".format(item.precoRef ?: 0.0)) }, trailingContent = { Button(onClick = { onAdicionar(item) }) { Text("+ Lista") } })
             HorizontalDivider()
         } }
     }

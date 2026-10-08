@@ -33,6 +33,11 @@ class ListaAtivaViewModel @Inject constructor(private val dao: ItemDao) : ViewMo
 
     fun abrir(listaId: String) { _listaId.value = listaId }
     fun toggle(item: ItemEntity) = viewModelScope.launch { dao.setSelecionado(item.id, !item.selecionado) }
+    fun qtd(item: ItemEntity, delta: Double) = viewModelScope.launch {
+        val nova = (item.quantidade + delta).coerceAtLeast(0.5)
+        dao.atualizar(item.copy(quantidade = nova))
+    }
+    fun remover(item: ItemEntity) = viewModelScope.launch { dao.remover(item.id) }
 }
 
 @Composable
@@ -56,13 +61,20 @@ fun ListaAtivaScreen(listaId: String, vm: ListaAtivaViewModel = hiltViewModel())
                 val verde = item.selecionado
                 ListItem(
                     headlineContent = { Text(item.nome) },
-                    supportingContent = { Text("${item.tipo} • ${item.quantidade}x R$ %.2f".format(item.precoUnit ?: 0.0)) },
+                    supportingContent = {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text("${item.tipo} • R$ %.2f".format(item.precoUnit ?: 0.0))
+                            // Stepper quantidade (Sprint4)
+                            OutlinedButton(onClick = { vm.qtd(item, -0.5) }, contentPadding = PaddingValues(4.dp)) { Text("−") }
+                            Text("%.1f".format(item.quantidade))
+                            OutlinedButton(onClick = { vm.qtd(item, 0.5) }, contentPadding = PaddingValues(4.dp)) { Text("+") }
+                        }
+                    },
                     trailingContent = {
-                        Checkbox(
-                            checked = verde,
-                            onCheckedChange = { vm.toggle(item) },
-                            modifier = Modifier.Companion
-                        )
+                        Row {
+                            TextButton(onClick = { vm.remover(item) }) { Text("✕") }
+                            Checkbox(checked = verde, onCheckedChange = { vm.toggle(item) })
+                        }
                     },
                     colors = if (verde) ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.primaryContainer)
                     else ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surface),
