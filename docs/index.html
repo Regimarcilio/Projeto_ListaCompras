@@ -29,14 +29,30 @@
   @keyframes pop{from{transform:scale(.985)}to{transform:scale(1)}}
   .pill{background:#ffffff2e; border-radius:999px; padding:4px 12px; font-size:13px; font-variant-numeric:tabular-nums;}
   /* Bottom nav fixa (1 mão) */
-  nav{position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:640px;
-    height:var(--nav-h); background:#fff; border-top:1px solid var(--line); display:flex; z-index:20;
+  /* Bottom nav ESSENCIAL (stylemaster): indicador animado + badge + safe-area */
+  nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:640px;
+    height:var(--nav-h);background:#fff;border-top:1px solid var(--line);
+    box-shadow:0 -2px 12px rgba(0,0,0,.08);display:flex;z-index:20;
     padding-bottom:env(safe-area-inset-bottom);}
-  nav button{flex:1; border:0; background:#fff; font-size:12px; min-height:56px; cursor:pointer; color:var(--muted);
-    border-top:3px solid transparent; transition:transform 120ms;}
-  nav button .ic{font-size:20px; display:block;}
-  nav button.ativo{color:var(--green-900); font-weight:700; border-top-color:var(--green-900); background:var(--green-bg);}
-  nav button:active{transform:scale(.97);}
+  nav button{position:relative;flex:1;border:0;background:#fff;font-size:12px;line-height:1.1;
+    min-height:56px;min-width:var(--tap);cursor:pointer;color:var(--muted);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+    padding:6px 4px;transition:transform 120ms ease-out,background-color 180ms ease-out,color 180ms ease-out;}
+  nav button .ic{font-size:20px;line-height:1;display:block;transform:translateZ(0);}
+  nav button::after{content:"";position:absolute;top:0;left:16%;right:16%;height:3px;
+    border-radius:0 0 999px 999px;background:var(--green-900);
+    transform:scaleX(0);transform-origin:center;transition:transform 180ms ease-out;}
+  nav button.ativo{color:var(--green-900);font-weight:700;background:var(--green-bg);}
+  nav button.ativo::after{transform:scaleX(1);}
+  nav button:active{transform:scale(.96);}
+  @media(hover:hover){nav button:hover:not(.ativo){background:#F5F5F5;}}
+  nav button:focus-visible{outline:2px solid var(--green-900);outline-offset:-2px;border-radius:8px;}
+  nav button .bdg{position:absolute;top:6px;left:calc(50% + 2px);min-width:18px;height:18px;
+    padding:0 5px;border-radius:999px;background:var(--green-900);color:#fff;
+    font-size:11px;font-weight:800;line-height:18px;text-align:center;font-variant-numeric:tabular-nums;}
+  nav button .bdg[hidden]{display:none;}
+  nav button.ativo .ic{animation:navPop 220ms ease-out;}
+  @keyframes navPop{0%{transform:translateY(0) scale(1);}40%{transform:translateY(-4px) scale(1.12);}100%{transform:translateY(0) scale(1);}}
   main{padding:12px 12px calc(var(--nav-h) + 16px);}
   .card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow);
     padding:12px; margin-bottom:10px;}
@@ -90,7 +106,10 @@
   #toast.show{display:flex; gap:12px; align-items:center;}
   #toast button{background:none; border:0; color:#A5D6A7; font-weight:800; font-size:14px; cursor:pointer;}
   label.lbl{font-size:13px; color:var(--muted); display:block; margin:8px 0 4px;}
-  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}
+  nav button,nav button::after{transition:none!important;}
+  nav button.ativo .ic{animation:none!important;}
+  nav button:active{transform:none;}}
 </style>
 </head>
 <body>
@@ -100,10 +119,10 @@
 </header>
 <main id="app"></main>
 <nav id="bottomnav">
-  <button data-t="catalogo"><span class="ic">📦</span>Catálogo</button>
-  <button data-t="lista"><span class="ic">🧾</span>Lista</button>
-  <button data-t="bi"><span class="ic">📊</span>BI</button>
-  <button data-t="hist"><span class="ic">🕘</span>Histórico</button>
+  <button data-t="catalogo"><span class="ic" aria-hidden="true">📦</span>Catálogo</button>
+  <button data-t="lista"><span class="ic" aria-hidden="true">🧾</span>Lista<span class="bdg" id="bdgLista" hidden>0</span></button>
+  <button data-t="bi"><span class="ic" aria-hidden="true">📊</span>BI</button>
+  <button data-t="hist"><span class="ic" aria-hidden="true">🕘</span>Histórico</button>
 </nav>
 <div id="sheetRoot"></div>
 <div id="toast"></div>
@@ -150,6 +169,8 @@ function header(bump){
   const tb=document.getElementById("totalBar");
   tb.textContent=BRL(t);
   document.getElementById("pillItens").textContent=`${n} ${n===1?"item":"itens"}`;
+  const bdg=document.getElementById("bdgLista");
+  bdg.hidden=n===0; bdg.textContent=n>99?"99+":n;
   if(bump){ tb.classList.remove("bump"); void tb.offsetWidth; tb.classList.add("bump"); }
 }
 
@@ -379,7 +400,8 @@ function impJSON(inp){
 /* ---------- render ---------- */
 function render(){
   header(false);
-  document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("ativo",b.dataset.t===tela));
+  document.querySelectorAll("nav button").forEach(b=>{const on=b.dataset.t===tela;b.classList.toggle("ativo",on);
+    if(on)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current");});
   const el=document.getElementById("app");
   el.innerHTML=tela==="catalogo"?vCatalogo():tela==="lista"?vLista():tela==="bi"?vBI():vHist();
   const q=document.getElementById("q");
