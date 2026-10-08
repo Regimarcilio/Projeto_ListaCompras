@@ -23,6 +23,8 @@ interface ListaDao {
     @Update suspend fun atualizar(lista: ListaEntity)
     @Query("SELECT * FROM lista_compra ORDER BY dataCriacao DESC")
     fun observarTodas(): Flow<List<ListaEntity>>
+    @Query("SELECT * FROM lista_compra WHERE id=:id LIMIT 1")
+    suspend fun porId(id: String): ListaEntity?
     @Query("UPDATE lista_compra SET finalizada=1, dataCompra=:iso WHERE id=:id")
     suspend fun finalizar(id: String, iso: String)
 }
@@ -41,4 +43,9 @@ interface ItemDao {
     fun totalPorTipo(listaId: String): Flow<List<TotalPorTipoRow>>
     @Query("SELECT COALESCE(SUM(COALESCE(precoUnit,0)*quantidade),0) FROM item_lista WHERE listaId=:listaId AND selecionado=1")
     fun acumuladoSelecionados(listaId: String): Flow<Double>
+    @Query("SELECT * FROM item_lista WHERE listaId=:listaId ORDER BY ordem, nome")
+    suspend fun listarDaLista(listaId: String): List<ItemEntity>
+    // BI global por tipo com filtro de período (epoch millis) — dashboard 7D/30D/Tudo
+    @Query("SELECT i.tipo AS tipo, SUM(COALESCE(i.precoUnit,0)*i.quantidade) AS total, COUNT(*) AS qtdItens, SUM(CASE WHEN i.selecionado=1 THEN 1 ELSE 0 END) AS qtdSel FROM item_lista i JOIN lista_compra l ON l.id=i.listaId WHERE l.finalizada=1 AND l.dataCriacao>=:desde ORDER BY total DESC")
+    fun totalPorTipoGlobalDesde(desde: Long): Flow<List<TotalPorTipoRow>>
 }

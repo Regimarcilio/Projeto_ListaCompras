@@ -9,7 +9,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.*
 import br.com.listacompras.presentation.catalogo.CatalogoScreen
+import br.com.listacompras.presentation.dashboard.DashboardGlobalScreen
 import br.com.listacompras.presentation.dashboard.DashboardScreen
+import br.com.listacompras.presentation.historico.HistoricoScreen
 import br.com.listacompras.presentation.listaativa.ListaAtivaScreen
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -26,12 +28,16 @@ class MainActivity : ComponentActivity() {
                         NavigationBarItem(selected = true, onClick = { nav.navigate("catalogo") }, label = { Text("Catálogo") }, icon = {})
                         NavigationBarItem(selected = false, onClick = { nav.navigate("lista") }, label = { Text("Lista") }, icon = {})
                         NavigationBarItem(selected = false, onClick = { nav.navigate("dashboard") }, label = { Text("BI") }, icon = {})
+                        NavigationBarItem(selected = false, onClick = { nav.navigate("historico") }, label = { Text("Histórico") }, icon = {})
+                        NavigationBarItem(selected = false, onClick = { nav.navigate("global") }, label = { Text("Global") }, icon = {})
                     }
                 }) { pad ->
                     NavHost(nav, startDestination = "catalogo", Modifier.padding(pad)) {
                         composable("catalogo") { CatalogoScreen() }
                         composable("lista") { ListaAtivaScreen(listaId) }
                         composable("dashboard") { DashboardScreen(listaId) }
+                        composable("historico") { HistoricoScreen() }
+                        composable("global") { DashboardGlobalScreen() }
                     }
                 }
             }
