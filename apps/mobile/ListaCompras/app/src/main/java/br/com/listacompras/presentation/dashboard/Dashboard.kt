@@ -2,6 +2,8 @@ package br.com.listacompras.presentation.dashboard
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -39,7 +41,7 @@ fun DashboardScreen(listaId: String, vm: DashboardViewModel = hiltViewModel()) {
     val totais by vm.totais.collectAsState()
     val max = (totais.maxOfOrNull { it.total } ?: 1.0)
     val geral = totais.sumOf { it.total }
-    Column(Modifier.padding(16.dp)) {
+    Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp)) {
         Text("BI por tipo", style = MaterialTheme.typography.titleLarge)
         Spacer(Modifier.height(12.dp))
         totais.forEach { t ->

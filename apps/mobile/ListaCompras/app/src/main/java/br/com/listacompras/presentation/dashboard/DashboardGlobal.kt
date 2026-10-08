@@ -1,6 +1,8 @@
 package br.com.listacompras.presentation.dashboard
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -31,7 +33,7 @@ class DashboardGlobalViewModel @Inject constructor(private val dao: ItemDao) : V
 @Composable
 fun DashboardGlobalScreen(vm: DashboardGlobalViewModel = hiltViewModel()) {
     val totais by vm.totais.collectAsState()
-    Column(Modifier.padding(16.dp)) {
+    Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp)) {
         Text("BI global (finalizadas)", style = MaterialTheme.typography.titleLarge)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Periodo.values().forEach { p ->

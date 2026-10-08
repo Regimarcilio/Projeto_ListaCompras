@@ -7,7 +7,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BarChart
-import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.ShoppingCart
@@ -21,8 +20,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.*
 import br.com.listacompras.presentation.catalogo.CatalogoScreen
-import br.com.listacompras.presentation.dashboard.DashboardGlobalScreen
-import br.com.listacompras.presentation.dashboard.DashboardScreen
+import br.com.listacompras.presentation.dashboard.BIScreen
 import br.com.listacompras.presentation.historico.HistoricoScreen
 import br.com.listacompras.presentation.listaativa.ListaAtivaScreen
 import br.com.listacompras.presentation.settings.SettingsScreen
@@ -36,7 +34,6 @@ private val DESTINOS = listOf(
     Destino("lista", "Lista", Icons.Filled.ShoppingCart),
     Destino("dashboard", "BI", Icons.Filled.BarChart),
     Destino("historico", "Histórico", Icons.Filled.History),
-    Destino("global", "Global", Icons.Filled.Dashboard),
     Destino("ajustes", "Ajustes", Icons.Filled.Settings)
 )
 
@@ -54,8 +51,8 @@ class MainActivity : ComponentActivity() {
                 val badge by mainVm.badge.collectAsState()
                 val rotaAtual = nav.currentBackStackEntryAsState().value?.destination?.route
                 Scaffold(bottomBar = {
-                    // FIX print 08/10: 6 destinos em 360dp estouravam e quebravam
-                    // "Catálogo/Histórico" em 2 linhas. Trava label em 1 linha com ellipsis.
+                    // 5 destinos (era 6 e quebrava "Catálogo/Histórico" em 360dp).
+                    // BI agora unifica Lista+Global via TabRow. Label travado 1 linha.
                     NavigationBar {
                         DESTINOS.forEach { d ->
                             NavigationBarItem(
@@ -92,9 +89,10 @@ class MainActivity : ComponentActivity() {
                     NavHost(nav, startDestination = "catalogo", Modifier.padding(pad)) {
                         composable("catalogo") { CatalogoScreen() }
                         composable("lista") { ListaAtivaScreen(listaId) }
-                        composable("dashboard") { DashboardScreen(listaId) }
+                        composable("dashboard") { BIScreen(listaId, abaInicial = 0) }
                         composable("historico") { HistoricoScreen() }
-                        composable("global") { DashboardGlobalScreen() }
+                        // Compat: rota antiga "global" abre a aba Global dentro do BI
+                        composable("global") { BIScreen(listaId, abaInicial = 1) }
                         composable("ajustes") { SettingsScreen() }
                     }
                 }
