@@ -1,0 +1,10 @@
+[
+  {"nome":"Banana prata","tipo":"HORTIFRUTI","unidade":"kg","precoRef":5.99},
+  {"nome":"Alface crespa","tipo":"HORTIFRUTI","unidade":"un","precoRef":3.49},
+  {"nome":"Patinho","tipo":"CARNE","unidade":"kg","precoRef":42.90},
+  {"nome":"Peito de frango","tipo":"CARNE","unidade":"kg","precoRef":24.90},
+  {"nome":"Arroz 5kg","tipo":"MERCEARIA","unidade":"pct","precoRef":22.90},
+  {"nome":"Feijão 1kg","tipo":"MERCEARIA","unidade":"pct","precoRef":8.49},
+  {"nome":"Água sanitária 2L","tipo":"LIMPEZA","unidade":"un","precoRef":8.49},
+  {"nome":"Detergente 500ml","tipo":"LIMPEZA","unidade":"un","precoRef":2.99}
+]
