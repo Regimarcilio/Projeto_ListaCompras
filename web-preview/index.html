@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ListaCompras — Prévia Web do App Android</title>
+<style>
+  :root { --green: #2E7D32; --green-bg: #C8E6C9; --bg: #f5f5f5; --card: #fff; }
+  * { box-sizing: border-box; font-family: system-ui, Roboto, sans-serif; }
+  body { margin: 0; background: var(--bg); max-width: 640px; margin: 0 auto; min-height: 100vh; }
+  header { background: var(--green); color: #fff; padding: 12px 16px; position: sticky; top: 0; z-index: 10; }
+  header h1 { margin: 0; font-size: 18px; }
+  #totalBar { font-size: 20px; font-weight: bold; margin-top: 4px; }
+  nav { display: flex; background: #fff; position: sticky; top: 0; border-bottom: 1px solid #ddd; z-index: 9; }
+  nav button { flex: 1; padding: 12px 4px; border: 0; background: #fff; font-size: 13px; cursor: pointer; }
+  nav button.ativo { color: var(--green); border-bottom: 3px solid var(--green); font-weight: bold; }
+  main { padding: 12px 12px 40px; }
+  .card { background: var(--card); border-radius: 10px; padding: 12px; margin-bottom: 10px; box-shadow: 0 1px 3px #0002; }
+  .card.sel { background: var(--green-bg); border: 1px solid var(--green); }
+  .row { display: flex; gap: 8px; align-items: center; }
+  .grow { flex: 1; }
+  input, select { padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 15px; width: 100%; }
+  .btn { background: var(--green); color: #fff; border: 0; border-radius: 8px; padding: 12px; font-size: 15px; width: 100%; cursor: pointer; }
+  .btn.out { background: #fff; color: var(--green); border: 1px solid var(--green); }
+  .chk { width: 26px; height: 26px; accent-color: var(--green); }
+  .bar { height: 16px; background: var(--green); border-radius: 4px; margin: 2px 0 8px; }
+  small.mut { color: #666; }
+  .aviso { background: #FFF8E1; border: 1px solid #F9A825; border-radius: 8px; padding: 10px; margin-bottom: 10px; font-size: 14px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🛒 ListaCompras <small style="font-weight:normal">(prévia web do APK)</small></h1>
+  <div id="totalBar">Total: R$ 0,00 • 0 itens</div>
+</header>
+<nav>
+  <button data-t="catalogo" class="ativo">Catálogo</button>
+  <button data-t="lista">Lista</button>
+  <button data-t="bi">BI</button>
+  <button data-t="hist">Histórico</button>
+</nav>
+<main id="app"></main>
+<script>
+const TIPOS = ["HORTIFRUTI","CARNE","MERCEARIA","LIMPEZA","PADARIA","LATICINIOS","BEBIDAS","HIGIENE","CONGELADOS","OUTROS"];
+const SEED = [
+  {nome:"Banana prata",tipo:"HORTIFRUTI",un:"kg",preco:5.99},
+  {nome:"Alface crespa",tipo:"HORTIFRUTI",un:"un",preco:3.49},
+  {nome:"Patinho",tipo:"CARNE",un:"kg",preco:42.90},
+  {nome:"Peito de frango",tipo:"CARNE",un:"kg",preco:24.90},
+  {nome:"Arroz 5kg",tipo:"MERCEARIA",un:"pct",preco:22.90},
+  {nome:"Feijão 1kg",tipo:"MERCEARIA",un:"pct",preco:8.49},
+  {nome:"Água sanitária 2L",tipo:"LIMPEZA",un:"un",preco:8.49},
+  {nome:"Detergente 500ml",tipo:"LIMPEZA",un:"un",preco:2.99}
+];
+let S = JSON.parse(localStorage.getItem("lc1") || "null") ||
+  { catalogo: SEED.map((s,i)=>({...s,id:"c"+i})), lista: [], historico: [] };
+const save = () => localStorage.setItem("lc1", JSON.stringify(S));
+const R$ = v => "R$ " + v.toFixed(2).replace(".", ",");
+let tela = "catalogo", filtro = "";
+
+function totalSel() { return S.lista.filter(i=>i.sel).reduce((a,i)=>a+(i.preco||0)*i.qtd,0); }
+function header() {
+  const t = totalSel(), n = S.lista.filter(i=>i.sel).length;
+  document.getElementById("totalBar").textContent = `Total: ${R$(t)} • ${n} itens`;
+}
+
+function vCatalogo() {
+  const itens = S.catalogo.filter(c=>c.nome.toLowerCase().includes(filtro.toLowerCase()));
+  return `<div class="aviso">Prévia navegável do app Android — mesmos fluxos e regras. Dados ficam neste navegador.</div>
+  <div class="card"><div class="row"><input id="q" placeholder="Buscar no catálogo..." value="${filtro}"></div></div>
+  <div class="card"><input id="n" placeholder="Nome do item">
+    <div class="row" style="margin-top:8px"><input id="p" type="number" step="0.01" placeholder="Valor (ex 5.99)">
+    <select id="t">${TIPOS.map(t=>`<option>${t}</option>`).join("")}</select></div>
+    <div style="height:8px"></div><button class="btn" onclick="addCat()">Adicionar (vira catálogo reutilizável)</button></div>
+  ${itens.map(c=>`<div class="card"><div class="row"><div class="grow"><b>${c.nome}</b><br><small class="mut">${c.tipo} • ${R$(c.preco||0)}</small></div>
+  <button class="btn out" style="width:auto" onclick="paraLista('${c.id}')">+ Lista</button></div></div>`).join("")}`;
+}
+function vLista() {
+  if(!S.lista.length) return `<div class="card">Lista vazia — adicione itens pelo <b>Catálogo</b>.</div>`;
+  return S.lista.map(i=>`<div class="card ${i.sel?'sel':''}"><div class="row">
+    <input type="checkbox" class="chk" ${i.sel?'checked':''} onchange="toggle('${i.id}')">
+    <div class="grow" onclick="toggle('${i.id}')"><b>${i.nome}</b><br><small class="mut">${i.tipo} • ${R$(i.preco||0)}</small></div>
+    <button onclick="qtd('${i.id}',-0.5)">−</button><b>${i.qtd}</b><button onclick="qtd('${i.id}',0.5)">+</button>
+    <button onclick="rm('${i.id}')">✕</button></div></div>`).join("") +
+    `<button class="btn" onclick="finalizar()">Finalizar lista (grava data)</button>`;
+}
+function vBI() {
+  const porTipo = {};
+  S.lista.filter(i=>i.sel).forEach(i=>{ porTipo[i.tipo]=(porTipo[i.tipo]||0)+i.qtd*(i.preco||0); });
+  const tot = Object.values(porTipo).reduce((a,b)=>a+b,0), max = Math.max(...Object.values(porTipo),1);
+  const n = parseInt(document.getElementById("np")?.value)||2;
+  return `<div class="card"><b>BI por tipo (selecionados)</b>${Object.keys(porTipo).length?"":"<br><small class=mut>Nada selecionado ainda.</small>"}
+  ${Object.entries(porTipo).map(([t,v])=>`<div>${t} — ${R$(v)}</div><div class="bar" style="width:${(v/max*100).toFixed(0)}%"></div>`).join("")}
+  <b>TOTAL: ${R$(tot)}</b></div>
+  <div class="card"><b>Dividir conta</b><div class="row"><input id="np" type="number" value="${n}" min="1" max="20" onchange="render()">
+  <button class="btn out" style="width:auto" onclick="render()">OK</button></div>
+  ${tot>0?Array.from({length:Math.min(n,20)},(_,k)=>`<div>Pessoa ${k+1}: ${R$(tot/n)}</div>`).join(""):""}</div>`;
+}
+function vHist() {
+  return `<div class="card"><div class="row"><button class="btn" onclick="expJSON()">Salvar JSON</button>
+  <button class="btn out" onclick="share()">Enviar (WhatsApp/SMS)</button></div>
+  <div style="height:8px"></div><button class="btn out" onclick="document.getElementById('imp').click()">Importar JSON</button>
+  <input type="file" id="imp" accept=".json" style="display:none" onchange="impJSON(this)"></div>
+  ${S.historico.length?"":"<div class=card><small class=mut>Nenhuma lista finalizada ainda.</small></div>"}
+  ${[...S.historico].reverse().map(h=>`<div class="card"><b>${h.nome}</b><br><small class="mut">${new Date(h.data).toLocaleString("pt-BR")} • ${h.itens.length} itens • ${R$(h.total)}</small><br>
+  <button class="btn out" style="width:auto" onclick="dup('${h.id}')">Duplicar zerada</button></div>`).join("")}`;
+}
+function render() {
+  header();
+  document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("ativo",b.dataset.t===tela));
+  const el = document.getElementById("app");
+  el.innerHTML = tela==="catalogo"?vCatalogo():tela==="lista"?vLista():tela==="bi"?vBI():vHist();
+  const q = document.getElementById("q"); if(q){ q.oninput=e=>{filtro=e.target.value; const p=e.target.selectionStart; render(); const n=document.getElementById("q"); n.focus(); n.setSelectionRange(p,p); }; }
+}
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{tela=b.dataset.t;render();});
+
+function addCat() {
+  const n=document.getElementById("n").value.trim(), p=parseFloat(document.getElementById("p").value.replace(",",".")), t=document.getElementById("t").value;
+  if(!n) return alert("Nome obrigatório");
+  if(!isNaN(p)&&p<=0) return alert("Preço deve ser > 0");
+  S.catalogo.push({id:"c"+Date.now(),nome:n,tipo:t,un:"un",preco:isNaN(p)?0:p}); save(); render();
+}
+function paraLista(id) { const c=S.catalogo.find(x=>x.id===id); S.lista.push({id:"i"+Date.now(),nome:c.nome,tipo:c.tipo,preco:c.preco||0,qtd:1,sel:false}); save(); tela="lista"; render(); }
+function toggle(id) { const i=S.lista.find(x=>x.id===id); i.sel=!i.sel; save(); render(); }
+function qtd(id,d) { const i=S.lista.find(x=>x.id===id); i.qtd=Math.max(0.5,i.qtd+d); save(); render(); }
+function rm(id) { S.lista=S.lista.filter(x=>x.id!==id); save(); render(); }
+function finalizar() {
+  if(!S.lista.length) return alert("Lista vazia");
+  const total=totalSel();
+  S.historico.push({id:"h"+Date.now(),nome:"Compra "+new Date().toLocaleDateString("pt-BR"),data:new Date().toISOString(),total,itens:S.lista.map(i=>({...i}))});
+  S.lista=[]; save(); tela="hist"; render();
+}
+function expJSON() {
+  const payload={app:"ListaCompras",schemaVersion:2,exportedAt:new Date().toISOString(),listas:S.historico};
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:"application/json"}));
+  a.download="listacompras-"+Date.now()+".json"; a.click();
+}
+function share() {
+  const sel=S.lista.filter(i=>i.sel), tot=totalSel();
+  const txt="🛒 Minha lista\n"+sel.map(i=>`• ${i.nome} — ${i.qtd}x ${R$(i.preco||0)}`).join("\n")+`\nTOTAL: ${R$(tot)}`;
+  if(navigator.share) navigator.share({text:txt});
+  else { navigator.clipboard.writeText(txt); alert("Texto copiado! Cole no WhatsApp/SMS."); }
+}
+function impJSON(inp) {
+  const f=inp.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{ try{ const j=JSON.parse(r.result); alert(`Importado: ${(j.listas||[]).length} lista(s) do JSON de ${j.exportedAt||"?"}`); }
+    catch(e){ alert("JSON inválido"); } };
+  r.readAsText(f);
+}
+function dup(id) { const h=S.historico.find(x=>x.id===id); S.lista=h.itens.map(i=>({...i,id:"i"+Date.now()+Math.random(),sel:false,preco:0})); save(); tela="lista"; render(); }
+render();
+</script>
+</body>
+</html>
