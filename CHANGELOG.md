@@ -2,6 +2,11 @@
 
 Formato: `versão — conteúdo — issues`.
 
+## v2.0 — Importar lista do texto + botões do Histórico
+- Importar texto colado (diálogo) ou via Compartilhar do WhatsApp/SMS; parser com testes. (#16)
+- Histórico: Ver lista em destaque, Excluir sinalizado (só visual). (#17)
+- APK: `ListaCompras-v2.0-import-debug.apk`
+
 ## v1.8 — Histórico só com listas fechadas
 - Histórico exibe somente `finalizada=1` + vazio amigável; export JSON inalterado. (#10)
 - APK: `ListaCompras-v1.8-hist-fechadas-debug.apk`
