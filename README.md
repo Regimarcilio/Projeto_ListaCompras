@@ -16,22 +16,30 @@ Offline-first em **Kotlin + Jetpack Compose + Room**, com catálogo reutilizáve
 ## 📱 Telas
 
 ### Catálogo — cadastro e `+ Lista`
-<img src="docs/screenshots/tela-catalogo.png" width="280" alt="Tela Catálogo">
+<p align="center">
+  <img src="docs/screenshots/tela-catalogo.png" width="280" alt="Tela Catálogo">
+</p>
 
 Cadastro direto (nome, valor, categoria e unidade em lista, marca) e grade de itens com preço e botão `+ Lista`.
 
 ### Lista — compra com total ao vivo
-<img src="docs/screenshots/tela-lista.png" width="280" alt="Tela Lista">
+<p align="center">
+  <img src="docs/screenshots/tela-lista.png" width="280" alt="Tela Lista">
+</p>
 
 Itens marcados ficam verdes, total no topo, stepper de quantidade, edição, fechar lista e importar texto.
 
 ### BI — por tipo e dividir conta
-<img src="docs/screenshots/tela-bi.png" width="280" alt="Tela BI">
+<p align="center">
+  <img src="docs/screenshots/tela-bi.png" width="280" alt="Tela BI">
+</p>
 
 Barras por categoria sobre os selecionados, total geral e divisão da conta por pessoa.
 
 ### Histórico — só finalizadas
-<img src="docs/screenshots/tela-hist.png" width="280" alt="Tela Histórico">
+<p align="center">
+  <img src="docs/screenshots/tela-hist.png" width="280" alt="Tela Histórico">
+</p>
 
 Cada registro tem **Ver lista** (somente leitura) e **Excluir**; export/import JSON de backup no topo.
 
