@@ -2,6 +2,7 @@ package br.com.listacompras.data.local.dao
 
 import androidx.room.*
 import br.com.listacompras.data.local.entity.CatalogoEntity
+import br.com.listacompras.data.local.entity.EventoEntity
 import br.com.listacompras.data.local.entity.ItemEntity
 import br.com.listacompras.data.local.entity.ListaEntity
 import br.com.listacompras.domain.model.TipoItem
@@ -65,4 +66,18 @@ interface ItemDao {
     // finalizadas e o Room quebra ao mapear p/ TotalPorTipoRow (crash issue #6).
     @Query("SELECT i.tipo AS tipo, SUM(COALESCE(i.precoUnit,0)*i.quantidade) AS total, COUNT(*) AS qtdItens, SUM(CASE WHEN i.selecionado=1 THEN 1 ELSE 0 END) AS qtdSel FROM item_lista i JOIN lista_compra l ON l.id=i.listaId WHERE l.finalizada=1 AND l.dataCriacao>=:desde GROUP BY i.tipo ORDER BY total DESC")
     fun totalPorTipoGlobalDesde(desde: Long): Flow<List<TotalPorTipoRow>>
+}
+
+/** #22: outbox offline — fila de eventos p/ sync online. */
+@Dao
+interface EventoDao {
+    @Insert suspend fun enfileirar(evento: EventoEntity)
+    @Query("SELECT * FROM evento_outbox WHERE sincronizado=0 ORDER BY criadoEm LIMIT 200")
+    suspend fun pendentes(): List<EventoEntity>
+    @Query("UPDATE evento_outbox SET sincronizado=1 WHERE id IN (:ids)")
+    suspend fun marcarSincronizados(ids: List<String>)
+    @Query("SELECT COUNT(*) FROM evento_outbox WHERE sincronizado=0")
+    fun contarPendentes(): Flow<Int>
+    @Query("DELETE FROM evento_outbox WHERE sincronizado=1 AND criadoEm < :antesDe")
+    suspend fun limparAntigos(antesDe: Long)
 }

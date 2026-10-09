@@ -10,6 +10,7 @@ navigation = "2.7.7"
 hilt-navigation-compose = "1.2.0"
 coroutines = "1.8.1"
 serialization = "1.7.3"
+work = "2.9.0"
 junit5 = "5.10.3"
 turbine = "1.1.0"
 mockk = "1.13.12"
@@ -36,6 +37,7 @@ hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", ve
 hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hilt" }
 coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
+work-runtime = { module = "androidx.work:work-runtime-ktx", version.ref = "work" }
 junit5-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit5" }
 turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }

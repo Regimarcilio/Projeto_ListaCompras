@@ -76,6 +76,8 @@ dependencies {
     implementation(libs.hilt.navigation.compose)
     implementation(libs.coroutines.core)
     implementation(libs.serialization.json)
+    // #22: outbox offline + sync online (WorkManager, sem lib HTTP nova — HttpURLConnection).
+    implementation(libs.work.runtime)
     ksp(libs.room.compiler)
     ksp(libs.hilt.compiler)
     testImplementation(libs.junit5.api)

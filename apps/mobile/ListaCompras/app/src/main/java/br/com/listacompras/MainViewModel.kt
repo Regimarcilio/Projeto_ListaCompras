@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import br.com.listacompras.data.local.dao.ItemDao
 import br.com.listacompras.data.local.dao.ListaDao
 import br.com.listacompras.data.local.entity.ListaEntity
+import br.com.listacompras.sync.SyncRepo
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -16,7 +17,8 @@ import javax.inject.Inject
 @HiltViewModel
 class MainViewModel @Inject constructor(
     dao: ItemDao,
-    private val listas: ListaDao
+    private val listas: ListaDao,
+    private val sync: SyncRepo
 ) : ViewModel() {
     val badge: StateFlow<Int> = dao.contarSelecionados()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
@@ -25,4 +27,7 @@ class MainViewModel @Inject constructor(
     fun garantirLista(id: String, nome: String = "Compra da semana") = viewModelScope.launch {
         if (listas.porId(id) == null) listas.criar(ListaEntity(id = id, nome = nome))
     }
+
+    /** #22: evento app_aberto (1x por abertura — chamado do LaunchedEffect da MainActivity). */
+    fun logAppAberto() = viewModelScope.launch { sync.logAppAberto() }
 }

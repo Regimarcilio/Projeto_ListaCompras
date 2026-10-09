@@ -9,6 +9,7 @@ import br.com.listacompras.data.local.MIGRATION_1_2
 import br.com.listacompras.data.local.MIGRATION_2_3
 import br.com.listacompras.data.local.MIGRATION_3_4
 import br.com.listacompras.data.local.MIGRATION_4_5
+import br.com.listacompras.data.local.MIGRATION_5_6
 import br.com.listacompras.data.local.entity.CatalogoEntity
 import br.com.listacompras.domain.model.TipoItem
 import dagger.Module
@@ -29,7 +30,7 @@ object AppModule {
     @Singleton
     fun provideDb(@ApplicationContext ctx: Context): AppDb =
         Room.databaseBuilder(ctx, AppDb::class.java, "listacompras.db")
-            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
             .addCallback(object : RoomDatabase.Callback() {
                 override fun onCreate(db: SupportSQLiteDatabase) {
                     super.onCreate(db)
@@ -37,7 +38,7 @@ object AppModule {
                     CoroutineScope(Dispatchers.IO).launch {
                         runCatching {
                             val built = Room.databaseBuilder(ctx, AppDb::class.java, "listacompras.db")
-                                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5).build()
+                                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6).build()
                             built.catalogo().seedAll(
                                 listOf(
                                     CatalogoEntity(nome = "Banana prata", tipo = TipoItem.HORTIFRUTI, unidadeDefault = "kg", precoRef = 5.99),
@@ -65,4 +66,7 @@ object AppModule {
 
     @Provides
     fun provideItens(db: AppDb) = db.itens()
+
+    @Provides
+    fun provideEventos(db: AppDb) = db.eventos()
 }

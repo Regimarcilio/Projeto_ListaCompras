@@ -49,3 +49,13 @@ data class ItemEntity(
     val selecionado: Boolean = false,
     val ordem: Int = 0
 )
+
+/** #22: outbox offline — eventos enfileirados localmente e enviados em lote pelo SyncWorker. */
+@Entity(tableName = "evento_outbox", indices = [Index("sincronizado"), Index("criadoEm")])
+data class EventoEntity(
+    @PrimaryKey val id: String = UUID.randomUUID().toString(),
+    val tipo: String,
+    val criadoEm: Long = System.currentTimeMillis(),
+    val payloadJson: String = "{}",
+    val sincronizado: Boolean = false
+)

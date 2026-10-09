@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- NFR-005: sem INTERNET, sem SEND_SMS, sem LOCATION. Só FileProvider. -->
+    <!-- #22: INTERNET + ACCESS_NETWORK_STATE p/ sync outbox (revoga parcial NFR-005, cf. ADR-002-permissoes-rede). -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- NFR-005: sem SEND_SMS, sem LOCATION. Só FileProvider + rede p/ sync. -->
     <application
         android:name=".DiApp"
         android:label="ListaCompras"

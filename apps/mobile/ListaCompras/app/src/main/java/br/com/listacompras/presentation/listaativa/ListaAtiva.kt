@@ -33,6 +33,7 @@ import br.com.listacompras.data.local.entity.ListaEntity
 import br.com.listacompras.domain.model.TipoItem
 import br.com.listacompras.domain.usecase.ListaOpsUseCase
 import br.com.listacompras.share.parseListaTexto
+import br.com.listacompras.sync.SyncRepo
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -108,7 +109,8 @@ fun Context.compartilharWhatsApp(texto: String) {
 class ListaAtivaViewModel @Inject constructor(
     private val dao: ItemDao,
     private val listas: ListaDao,
-    private val ops: ListaOpsUseCase
+    private val ops: ListaOpsUseCase,
+    private val sync: SyncRepo
 ) : ViewModel() {
     private val _listaId = MutableStateFlow("")
     val ui: StateFlow<ListaUiState> = _listaId.flatMapLatest { id ->
@@ -178,6 +180,14 @@ class ListaAtivaViewModel @Inject constructor(
             estabelecimento = lista?.estabelecimento
         )
         val novaId = ops.criar("Compra da semana")
+        // #22: evento lista_fechada (nome/total/qtd) — enfileira + agenda sync.
+        runCatching {
+            sync.logListaFechada(
+                lista?.nome ?: "Lista de compras",
+                total,
+                itens.size
+            )
+        }
         return ResumoFechado(
             nomeLista = lista?.nome ?: "Lista de compras",
             data = data,

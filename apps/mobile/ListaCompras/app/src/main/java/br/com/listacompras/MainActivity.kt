@@ -85,6 +85,8 @@ class MainActivity : ComponentActivity() {
                 val mainVm: MainViewModel = hiltViewModel()
                 // P0: garante que a lista ativa exista antes de qualquer tela usar.
                 LaunchedEffect(listaId) { mainVm.garantirLista(listaId) }
+                // #22: evento app_aberto 1x por criação da Activity.
+                LaunchedEffect(Unit) { mainVm.logAppAberto() }
                 val badge by mainVm.badge.collectAsState()
                 val rotaAtual = nav.currentBackStackEntryAsState().value?.destination?.route
                 // Cabeçalho criativo (STYLEMASTER): selo verde + carrinho, eco do ícone do app.
