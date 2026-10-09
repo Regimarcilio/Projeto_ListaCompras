@@ -1,5 +1,6 @@
 package br.com.listacompras
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -42,8 +43,24 @@ private val DESTINOS = listOf(
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    // #16: texto recebido via share do sistema (ACTION_SEND text/plain).
+    private val sharedTextState = mutableStateOf<String?>(null)
+
+    private fun extrairTextoShare(intent: Intent?): String? {
+        if (intent?.action != Intent.ACTION_SEND) return null
+        if (intent.type != "text/plain") return null
+        return intent.getStringExtra(Intent.EXTRA_TEXT)?.takeIf { it.isNotBlank() }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        extrairTextoShare(intent)?.let { sharedTextState.value = it }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        sharedTextState.value = extrairTextoShare(intent)
         enableEdgeToEdge()
         setContent {
             // Tema: prefs.temaEscuro (Settings salva) com fallback p/ sistema quando nunca configurado.
@@ -54,6 +71,17 @@ class MainActivity : ComponentActivity() {
             ListaComprasTheme(escuro = escuro) {
                 val nav = rememberNavController()
                 var listaId by remember { mutableStateOf("demo-lista-01") }
+                // #16: share recebido → navega p/ lista; a importação pede confirmação no diálogo.
+                val sharedText by sharedTextState
+                LaunchedEffect(sharedText) {
+                    if (!sharedText.isNullOrBlank()) {
+                        nav.navigate("lista") {
+                            popUpTo(nav.graph.startDestinationId) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    }
+                }
                 val mainVm: MainViewModel = hiltViewModel()
                 // P0: garante que a lista ativa exista antes de qualquer tela usar.
                 LaunchedEffect(listaId) { mainVm.garantirLista(listaId) }
@@ -122,7 +150,9 @@ class MainActivity : ComponentActivity() {
                         composable("lista") {
                             ListaAtivaScreen(
                                 listaId,
-                                onListaFechada = { novaId -> listaId = novaId }
+                                onListaFechada = { novaId -> listaId = novaId },
+                                textoCompartilhado = sharedText,
+                                onTextoCompartilhadoConsumido = { sharedTextState.value = null }
                             )
                         }
                         composable("dashboard") { BIScreen(listaId, abaInicial = 0) }

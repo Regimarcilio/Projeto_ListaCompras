@@ -12,6 +12,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -28,12 +29,16 @@ import androidx.lifecycle.viewModelScope
 import br.com.listacompras.data.local.dao.ItemDao
 import br.com.listacompras.data.local.dao.ListaDao
 import br.com.listacompras.data.local.entity.ItemEntity
+import br.com.listacompras.data.local.entity.ListaEntity
+import br.com.listacompras.domain.model.TipoItem
 import br.com.listacompras.domain.usecase.ListaOpsUseCase
+import br.com.listacompras.share.parseListaTexto
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
+import java.util.UUID
 import javax.inject.Inject
 
 data class ListaUiState(val itens: List<ItemEntity> = emptyList(), val total: Double = 0.0)
@@ -182,6 +187,39 @@ class ListaAtivaViewModel @Inject constructor(
             novaId = novaId
         )
     }
+
+    /** #16: resultado da importação de texto (nova lista + contadores p/ Snackbar). */
+    data class ResumoImportacao(val novaId: String, val qtd: Int, val ignoradas: Int)
+
+    /** #16: importa texto no formato do share (WhatsApp) p/ nova lista ativa.
+     *  Nome do header ou "Lista recebida dd/MM"; estabelecimento do header. */
+    suspend fun importarTexto(texto: String): ResumoImportacao {
+        val parsed = parseListaTexto(texto)
+        val dataCurta = OffsetDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM"))
+        val nome = parsed.nome?.takeIf { it.isNotBlank() } ?: "Lista recebida $dataCurta"
+        val novaId = UUID.randomUUID().toString()
+        listas.criar(
+            ListaEntity(
+                id = novaId,
+                nome = nome,
+                estabelecimento = parsed.estabelecimento?.takeIf { it.isNotBlank() }
+            )
+        )
+        parsed.itens.forEachIndexed { idx, item ->
+            dao.adicionar(
+                ItemEntity(
+                    listaId = novaId,
+                    nome = item.nome,
+                    tipo = TipoItem.OUTROS,
+                    unidade = item.unidade,
+                    quantidade = item.qtd,
+                    precoUnit = item.precoUnit,
+                    ordem = idx
+                )
+            )
+        }
+        return ResumoImportacao(novaId, parsed.itens.size, parsed.ignoradas)
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -189,7 +227,10 @@ class ListaAtivaViewModel @Inject constructor(
 fun ListaAtivaScreen(
     listaId: String,
     vm: ListaAtivaViewModel = hiltViewModel(),
-    onListaFechada: (String) -> Unit = {}
+    onListaFechada: (String) -> Unit = {},
+    // #16: texto recebido via share do sistema (ACTION_SEND) — abre o diálogo pré-preenchido.
+    textoCompartilhado: String? = null,
+    onTextoCompartilhadoConsumido: () -> Unit = {}
 ) {
     LaunchedEffect(listaId) { vm.abrir(listaId) }
     val st by vm.ui.collectAsState()
@@ -197,9 +238,21 @@ fun ListaAtivaScreen(
     val estabelecimento = listaAtual?.estabelecimento
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
+    val snackbar = remember { SnackbarHostState() }
     var resumo by remember { mutableStateOf<ResumoFechado?>(null) }
     var editando by remember { mutableStateOf<ItemEntity?>(null) }
     var fechando by remember { mutableStateOf(false) }
+    // #16: diálogo Importar texto (colar ou share recebido).
+    var mostrarImportar by remember { mutableStateOf(false) }
+    var textoImportar by remember { mutableStateOf("") }
+    // Share do sistema: confirma via diálogo pré-preenchido, nunca importa silencioso.
+    LaunchedEffect(textoCompartilhado) {
+        if (!textoCompartilhado.isNullOrBlank()) {
+            textoImportar = textoCompartilhado
+            mostrarImportar = true
+            onTextoCompartilhadoConsumido()
+        }
+    }
     // #7: pergunta do estabelecimento — 1 vez por lista (reset ao trocar de lista).
     var mostrarEstab by remember(listaId) { mutableStateOf(false) }
     var perguntouEstab by remember(listaId) { mutableStateOf(false) }
@@ -215,7 +268,8 @@ fun ListaAtivaScreen(
         }
     }
 
-    Column {
+    Scaffold(snackbarHost = { SnackbarHost(snackbar) }) { pad ->
+    Column(Modifier.padding(pad)) {
         // Header fixo com total acumulado (RF-004) — padrão web: total grande verde + pill
         Surface(tonalElevation = 2.dp) {
             Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -239,7 +293,11 @@ fun ListaAtivaScreen(
                     }
                     AssistChip(onClick = {}, label = { Text("%d %s".format(st.itens.count { it.selecionado }, if (st.itens.count { it.selecionado } == 1) "item" else "itens")) })
                 }
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
                     Button(
                         onClick = {
                             fechando = true
@@ -271,6 +329,11 @@ fun ListaAtivaScreen(
                         },
                         modifier = Modifier.weight(1f)
                     ) { Text("Enviar via WhatsApp", maxLines = 1, overflow = TextOverflow.Ellipsis) }
+                    // #16: ponto de entrada do Importar texto (colar ou share recebido).
+                    IconButton(
+                        onClick = { mostrarImportar = true },
+                        modifier = Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                    ) { Icon(Icons.Filled.Download, contentDescription = "Importar texto") }
                 }
                 if (vazia) Text(
                     "Lista vazia — adicione itens pelo Catálogo para fechar.",
@@ -346,6 +409,7 @@ fun ListaAtivaScreen(
                 HorizontalDivider()
             }
         }
+        }
     }
 
     // #4: diálogo de edição por item
@@ -393,6 +457,71 @@ fun ListaAtivaScreen(
             }
         )
     }
+
+    // #16: diálogo Importar texto — cria nova lista e troca o ativo via onListaFechada.
+    if (mostrarImportar) {
+        ImportarTextoDialog(
+            textoInicial = textoImportar,
+            onDismiss = { mostrarImportar = false },
+            onConfirmar = { texto ->
+                scope.launch {
+                    val r = vm.importarTexto(texto)
+                    mostrarImportar = false
+                    textoImportar = ""
+                    if (r.qtd == 0) {
+                        snackbar.showSnackbar("Nenhum item válido encontrado no texto")
+                    } else {
+                        onListaFechada(r.novaId)
+                        val msg = if (r.ignoradas > 0) "${r.qtd} itens importados ✅ (${r.ignoradas} ignoradas)"
+                        else "${r.qtd} itens importados ✅"
+                        snackbar.showSnackbar(msg)
+                    }
+                }
+            }
+        )
+    }
+}
+
+@Composable
+private fun ImportarTextoDialog(
+    textoInicial: String,
+    onDismiss: () -> Unit,
+    onConfirmar: (String) -> Unit
+) {
+    var texto by remember(textoInicial) { mutableStateOf(textoInicial) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Importar texto") },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth().imePadding(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    "Cole o texto recebido via WhatsApp/SMS no formato do app.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                OutlinedTextField(
+                    value = texto,
+                    onValueChange = { texto = it },
+                    placeholder = { Text("🛒 Minha lista (…)\n• …") },
+                    minLines = 5,
+                    maxLines = 10,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onConfirmar(texto) },
+                enabled = texto.isNotBlank()
+            ) { Text("Confirmar") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancelar") }
+        }
+    )
 }
 
 @Composable

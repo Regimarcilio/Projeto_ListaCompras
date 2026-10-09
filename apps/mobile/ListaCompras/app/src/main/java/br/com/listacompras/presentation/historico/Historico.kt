@@ -3,6 +3,9 @@ package br.com.listacompras.presentation.historico
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -99,9 +102,32 @@ fun HistoricoScreen(vm: HistoricoViewModel = hiltViewModel()) {
                             )
                         }
                         Text("criada ${java.util.Date(l.dataCriacao)} • finalizada ${l.dataCompra}")
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            OutlinedButton(onClick = { verLista = l }) { Text("Ver lista") }
-                            OutlinedButton(onClick = { excluirAlvo = l }) { Text("Excluir") }
+                        // #17 (só visual): primária Ver lista em destaque (filled + ícone),
+                        // destrutiva Excluir sinalizada em vermelho; mesma ordem/altura/padding
+                        // em todos os cards, só tokens MaterialTheme (claro+escuro). Sem mudar fluxos.
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Button(
+                                onClick = { verLista = l },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Icon(Icons.Filled.Visibility, contentDescription = null)
+                                Spacer(Modifier.width(8.dp))
+                                Text("Ver lista", maxLines = 1)
+                            }
+                            OutlinedButton(
+                                onClick = { excluirAlvo = l },
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    contentColor = MaterialTheme.colorScheme.error
+                                ),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Icon(Icons.Filled.Delete, contentDescription = null)
+                                Spacer(Modifier.width(8.dp))
+                                Text("Excluir", maxLines = 1)
+                            }
                         }
                     }
                 }
