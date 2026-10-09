@@ -2,6 +2,10 @@
 
 Formato: `versão — conteúdo — issues`.
 
+## v2.1 — Outbox offline + sync online
+- Fila `evento_outbox` (banco v5→v6), Worker só com rede, endpoint/e-mail em Ajustes, `logLogin` pronto p/ #20; `ADR-002` (rede); `docs/backend/APPS_SCRIPT.md`. (#22)
+- APK: `ListaCompras-v2.1-outbox-debug.apk`
+
 ## v2.0 — Importar lista do texto + botões do Histórico
 - Importar texto colado (diálogo) ou via Compartilhar do WhatsApp/SMS; parser com testes. (#16)
 - Histórico: Ver lista em destaque, Excluir sinalizado (só visual). (#17)
